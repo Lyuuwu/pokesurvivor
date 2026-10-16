@@ -580,5 +580,17 @@ G.I18n.add({
 
   // ---------------- perfil de prueba local ----------------
   'Perfil de prueba local aplicado. Copia de seguridad guardada.': 'Local test profile applied. A backup was saved.',
-  'No se pudo aplicar el perfil de prueba local:': 'Could not apply the local test profile:'
+  'No se pudo aplicar el perfil de prueba local:': 'Could not apply the local test profile:',
+
+  // ---------------- servidor propio (python -m server) ----------------
+  'Código de invitación': 'Invite code',
+  'Tu partida se guarda en el ordenador de quien hace de servidor: entra desde cualquier aparato con esta misma dirección. Como invitado no se guarda.':
+    'Your game is saved on the host\'s computer: log in from any device at this same address. Guests are not saved.',
+  'Pide a quien hace de servidor una contraseña temporal (python -m server reset-password).':
+    'Ask the host for a temporary password (python -m server reset-password).',
+  'Guardado en el servidor': 'Saved on the server', 'Pendiente de subir al servidor': 'Waiting to upload to the server',
+  'Cuenta del servidor propio': 'Self-hosted server account',
+  'El código de invitación no es correcto.': 'The invite code is not correct.', 'Escribe el código de invitación.': 'Type the invite code.',
+  'No se pudo conectar con el servidor.': 'Could not connect to the server.',
+  'La sesión ha caducado: vuelve a entrar para guardar en el servidor.': 'Your session expired: log in again to save on the server.'
 });

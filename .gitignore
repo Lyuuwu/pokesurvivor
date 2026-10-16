@@ -21,3 +21,8 @@ docs/CONTACTOS_CREADORES.md
 
 # Caché local de wrangler (Cloudflare)
 .wrangler/
+
+# Servidor propio: cuentas, partidas y copias (nunca al repositorio)
+server/data/
+.venv/
+docs/local_server_plan.md

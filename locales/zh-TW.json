@@ -3582,5 +3582,15 @@
   "Primera versión": "首個版本",
   "Primera versión pública de PokéSurvivor.": "PokéSurvivor 首次公開發佈。",
   "7 October 2026": "2026 年 10 月 7 日",
-  "7 de octubre de 2026": "2026 年 10 月 7 日"
+  "7 de octubre de 2026": "2026 年 10 月 7 日",
+  "Invite code": "邀請碼",
+  "Your game is saved on the host's computer: log in from any device at this same address. Guests are not saved.": "你的進度存在開伺服器那台電腦上：用同一個網址，從任何裝置登入都能繼續。訪客不會存檔。",
+  "Ask the host for a temporary password (python -m server reset-password).": "請開伺服器的人幫你產生臨時密碼（python -m server reset-password）。",
+  "Saved on the server": "已存到伺服器",
+  "Waiting to upload to the server": "等待上傳到伺服器",
+  "Self-hosted server account": "自架伺服器帳號",
+  "The invite code is not correct.": "邀請碼不正確。",
+  "Type the invite code.": "請輸入邀請碼。",
+  "Could not connect to the server.": "無法連線到伺服器。",
+  "Your session expired: log in again to save on the server.": "登入已過期：請重新登入，才能存到伺服器。"
 }

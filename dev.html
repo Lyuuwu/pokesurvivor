@@ -104,6 +104,8 @@
       <input id="f-user" class="field" maxlength="16" spellcheck="false">
       <label for="f-pass">Contraseña</label>
       <input id="f-pass" class="field" type="password" maxlength="64">
+      <label for="f-invite" id="l-invite" class="hidden">Código de invitación</label>
+      <input id="f-invite" class="field hidden" maxlength="32" spellcheck="false" autocomplete="off" autocapitalize="characters">
       <p id="login-err" class="err"></p>
       <p class="note"><a href="#" id="f-forgot">¿Olvidaste tu contraseña?</a></p>
       <p id="forgot-note" class="note hidden">Si vinculaste tu Gmail, pulsa <b>Entrar con Google</b> con ese Gmail: es tu misma cuenta.
@@ -571,6 +573,7 @@
 <!-- núcleo -->
 <script defer src="js/core/firebase-config.js"></script>
 <script defer src="js/core/db.js"></script>
+<script defer src="js/net/selfhost.js"></script>
 <script defer src="js/core/audio.js"></script>
 <script defer src="js/core/input.js"></script>
 <script defer src="js/core/touch.js"></script>

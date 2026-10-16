@@ -22,6 +22,12 @@
  *       ps.save.<clave>  partida de esa cuenta
  *       ps.session       última cuenta con sesión iniciada
  *
+ *   SERVIDOR PROPIO  (python -m server, ver docs/local_server_plan.md)
+ *     Si el juego se abre desde ese servidor (lo detecta G.SelfHost): las
+ *     cuentas y partidas se guardan en el ordenador que hace de servidor, en
+ *     server/data/. Funciona como la nube (copia local + fusión con merge),
+ *     pero sin Firebase. Lo online de Firebase (amigos, ranking) no está.
+ *
  * El modo invitado juega con una partida en memoria que no se guarda.
  */
 G.DB = (() => {
@@ -32,10 +38,10 @@ G.DB = (() => {
   const SDK = 'https://www.gstatic.com/firebasejs/13.0.0/';
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
 
-  let mode = 'local';       // 'cloud' | 'local'
+  let mode = 'local';       // 'cloud' | 'server' | 'local'
   let localReason = '';     // por qué no hay nube: 'file' | 'config' | 'host' | 'error'
   let user = null;          // nombre visible
-  let key = null;           // clave local (minúsculas) o uid de Firebase
+  let key = null;           // clave local (minúsculas), uid de Firebase o id del servidor propio
   let guest = false;
   let save = null;
   let storageOk = true;
@@ -553,6 +559,7 @@ G.DB = (() => {
 
   /** Sube la partida fusionándola con lo que haya en la nube (transacción). */
   function pushNow() {
+    if (mode === 'server') return pushSrv();
     if (mode !== 'cloud' || guest || !save || !uid) return Promise.resolve();
     // Si ya hay una subida en marcha, se hace otra justo después (para lo que haya cambiado mientras).
     if (pushing) { pending = true; return pushing.then(() => (pending ? pushNow() : undefined)); }
@@ -649,6 +656,146 @@ G.DB = (() => {
   }
 
   // =====================================================================
+  //                        MODO SERVIDOR PROPIO
+  // =====================================================================
+  /*
+   * Como la nube: copia en el navegador (ps.srv.save.<id>) y se sube al
+   * servidor. Si otro aparato u otra pestaña guardó antes, el servidor dice
+   * 409 con su versión: se fusiona con merge() y se vuelve a subir. Aquí no
+   * se paga por escritura, así que se sube a los pocos segundos de cada cambio.
+   */
+  const K_SRV = 'ps.srv.save.', K_SRV_REV = 'ps.srv.rev.';
+  const SRV_GAP = 3000, SRV_PULL_GAP = 5 * 60 * 1000;
+  let srvRev = 0, authWarned = false;
+
+  async function initServer() {
+    if (!G.SelfHost || !(await G.SelfHost.detect())) return false;
+    addEventListener('online', () => { if (pending) pushNow(); });
+    let hiddenAt = 0;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); if (pending) pushNow(); }
+      else if (hiddenAt && Date.now() - hiddenAt > SRV_PULL_GAP) pullSrv();
+    });
+    // Al cerrar la página: un último envío que el navegador termina aunque se cierre.
+    // Si falla, la copia de este navegador se junta con el servidor al volver a entrar.
+    addEventListener('pagehide', () => {
+      if (pending && save && key && !guest) G.SelfHost.putSave(srvRev, plain(fold(save)), { keepalive: true }).catch(() => {});
+    });
+    return true;
+  }
+
+  /** Abre la partida del servidor de una cuenta recién entrada (como openCloud). */
+  async function openServer(me, opts = {}) {
+    key = me.id;
+    const cached = read(K_SRV + key);
+    let remote = null, online = true;
+    try {
+      const r = await G.SelfHost.getSave();
+      remote = r.save; srvRev = r.rev || 0;
+    } catch (e) {
+      if (e.code === 'auth' || !cached) { key = null; throw e; }
+      online = false; srvRev = +read(K_SRV_REV + key) || 0;
+    }
+    let s = merge(cached && fold(migrate(cached)), remote && migrate(remote));
+    if (!s) s = newSave(me.name);
+    if (opts.legacy) {
+      s = merge(s, opts.legacy.save);
+      write(K_MIGRATED + opts.legacy.key, key);
+    }
+    save = fold(migrate(s, me.name));
+    save.name = me.name; user = me.name; guest = false;
+    write(K_SRV + key, save); write(K_SRV_REV + key, srvRev);
+    lastPull = Date.now(); lastPush = Date.now();
+    const same = remote && !opts.legacy && (!cached || (cached.updated || 0) <= (remote.updated || 0));
+    if (!online) { pending = true; setSync('offline'); scheduleRetry(); }
+    else if (same) setSync('ok');
+    else pushNow();
+  }
+
+  function pushSrv() {
+    if (guest || !save || !key) return Promise.resolve();
+    if (pushing) { pending = true; return pushing.then(() => (pending ? pushNow() : undefined)); }
+    clearTimeout(pushT); pushT = 0; pushDue = 0;
+    pending = false; lastPush = Date.now();
+    setSync('syncing');
+    const k = key;
+    let failed = false;
+    pushing = (async () => {
+      for (let i = 0; i < 4; i++) {
+        if (key !== k || !save) return;
+        try {
+          srvRev = (await G.SelfHost.putSave(srvRev, plain(fold(save)))).rev;
+          return;
+        } catch (e) {
+          if (e.code !== 'conflict' || key !== k || !save) throw e;
+          // Otro aparato (u otra pestaña) guardó antes: se junta con lo suyo y se reintenta.
+          srvRev = e.rev || 0;
+          if (e.save) applyInPlace(merge(plain(fold(save)), migrate(e.save)));
+        }
+      }
+      throw { code: 'conflict' };
+    })().then(() => {
+      if (key !== k || !save) return;
+      fails = 0;
+      write(K_SRV + k, save); write(K_SRV_REV + k, srvRev);
+      setSync(pending ? 'pending' : 'ok');
+      if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
+    }).catch(e => {
+      console.warn('[DB] no se pudo guardar en el servidor:', (e && e.code) || e);
+      pending = true; failed = true;
+      setSync(e && e.code === 'net' ? 'offline' : 'pending');
+      if (e && e.code === 'auth') {
+        // Sesión caducada o contraseña cambiada: lo hecho sigue en este navegador hasta volver a entrar.
+        if (!authWarned && G.UI && G.UI.toast) { authWarned = true; G.UI.toast('La sesión ha caducado: vuelve a entrar para guardar en el servidor.', 6000); }
+        return;
+      }
+      scheduleRetry();
+    }).finally(() => {
+      pushing = null;
+      if (!failed && pending) schedulePush(SRV_GAP);
+    });
+    return pushing;
+  }
+
+  /** Al volver tras un rato fuera: lo guardado desde otro aparato (como pullSoon). */
+  function pullSrv() {
+    clearTimeout(pullT);
+    if (mode !== 'server' || guest || !save || !key) return;
+    if (pushing || (G.Game && G.Game.state && G.Game.state !== 'ui')) { pullT = setTimeout(pullSrv, 20000); return; }
+    lastPull = Date.now();
+    const k = key;
+    G.SelfHost.getSave().then(r => {
+      if (!r.save || !save || key !== k || pushing) return;
+      // La copia de aquí pasa a contener la del servidor: se puede subir sobre su versión.
+      applyInPlace(merge(plain(fold(save)), migrate(r.save)));
+      srvRev = r.rev || 0;
+      write(K_SRV + k, save); write(K_SRV_REV + k, srvRev);
+      if (G.UI && G.UI.refreshCoins) G.UI.refreshCoins();
+    }).catch(e => console.warn('[DB] no se pudo bajar la partida del servidor:', (e && e.code) || e));
+  }
+
+  const SRV_ERR = {
+    'bad-login': 'Usuario o contraseña incorrectos.',
+    'name-taken': 'Ese nombre ya existe.',
+    'bad-name': 'El nombre debe tener 3-16 letras, números o _.',
+    'weak-pass': 'La contraseña debe tener al menos 6 caracteres.',
+    'bad-invite': 'El código de invitación no es correcto.',
+    'too-many': 'Demasiados intentos seguidos. Espera un poco.',
+    'net': 'No se pudo conectar con el servidor.'
+  };
+  const srvError = e => SRV_ERR[e && e.code] || ('Error: ' + ((e && (e.code || e.message)) || 'desconocido'));
+
+  /** Entra (o crea la cuenta) y abre su partida; junta una cuenta local antigua del mismo nombre. */
+  async function enterServer(auth, name, pass) {
+    try {
+      const legacy = await legacySave(name, pass);
+      await openServer(await auth(), { legacy });
+      authWarned = false;
+      return { ok: true, isNew: !save.partner, imported: !!legacy };
+    } catch (e) { return { ok: false, error: srvError(e) }; }
+  }
+
+  // =====================================================================
   //                           API PÚBLICA
   // =====================================================================
 
@@ -658,9 +805,23 @@ G.DB = (() => {
   function ready() {
     if (readyP) return readyP;
     readyP = (async () => {
-      try { if (await initCloud()) mode = 'cloud'; }
+      try {
+        if (await initServer()) mode = 'server';
+        else if (await initCloud()) mode = 'cloud';
+      }
       catch (e) { console.warn('[DB] sin nube:', e.message); localReason = 'error'; mode = 'local'; }
       if (mode === 'local') { setSync('local'); return restoreLocal(); }
+      if (mode === 'server') {
+        const me = G.SelfHost.me;
+        if (!me) { setSync('ok'); return false; }
+        try { await openServer(me); return true; }
+        catch (e) {
+          console.warn('[DB] no se pudo abrir la partida del servidor:', e.code || e.message);
+          if (e.code === 'auth') G.SelfHost.forget();
+          setSync('ok');
+          return false;
+        }
+      }
       const u = await new Promise(res => { const off = auth.onAuthStateChanged(x => { off(); res(x); }); });
       if (!u) return false;
       try { await openCloud(u); return true; }
@@ -669,12 +830,18 @@ G.DB = (() => {
     return readyP;
   }
 
-  async function register(name, pass) {
+  /** @param invite  código de invitación (sólo en el servidor propio) */
+  async function register(name, pass, invite) {
     name = (name || '').trim();
     if (!VALID.test(name)) return { ok: false, error: 'El nombre debe tener 3-16 letras, números o _.' };
-    const min = mode === 'cloud' ? 6 : 4;
+    const min = mode === 'local' ? 4 : 6;
     if ((pass || '').length < min) return { ok: false, error: `La contraseña debe tener al menos ${min} caracteres.` };
     if (mode === 'local') return registerLocal(name, pass);
+    if (mode === 'server') {
+      invite = (invite || '').trim();
+      if (!invite) return { ok: false, error: 'Escribe el código de invitación.' };
+      return enterServer(() => G.SelfHost.register(name, pass, invite), name, pass);
+    }
     // Tope de cuentas del mes (Firebase cobra a partir de 50.000 al mes).
     try {
       const legacy = await legacySave(name, pass);
@@ -687,6 +854,7 @@ G.DB = (() => {
   async function login(name, pass) {
     name = (name || '').trim();
     if (mode === 'local') return loginLocal(name, pass);
+    if (mode === 'server') return enterServer(() => G.SelfHost.login(name, pass || ''), name, pass);
     try {
       const legacy = await legacySave(name, pass);
       const cred = await auth.signInWithEmailAndPassword(nameToEmail(name), pass || '');
@@ -729,6 +897,13 @@ G.DB = (() => {
     save.updated = Date.now();
     fold(save);
     if (mode === 'local') return write(K_SAVE + key, save);
+    if (mode === 'server') {
+      write(K_SRV + key, save);
+      pending = true;
+      setSync('pending');
+      schedulePush(SRV_GAP);
+      return true;
+    }
     write(K_CLOUD + uid, save);
     pending = true;
     setSync('pending');
@@ -746,13 +921,16 @@ G.DB = (() => {
       if (pending) { try { await pushNow(); } catch (e) { /* queda la copia local */ } }
       stopListening();
       try { await auth.signOut(); } catch (e) { /* nada */ }
+    } else if (mode === 'server' && !guest && save) {
+      if (pending) { try { await pushNow(); } catch (e) { /* queda la copia local */ } }
+      await G.SelfHost.logout();
     } else if (mode === 'local' && !guest) {
       commit();
       remove(K_SES);
     }
     clearTimeout(pushT); clearTimeout(retryT);
-    user = key = save = uid = null; guest = false; pending = false;
-    setSync(mode === 'cloud' ? 'ok' : 'local');
+    user = key = save = uid = null; guest = false; pending = false; srvRev = 0;
+    setSync(mode === 'local' ? 'local' : 'ok');
   }
 
   function nameAccount() { return !!(auth && auth.currentUser && (auth.currentUser.email || '').endsWith('@' + NAME_DOMAIN)); }
@@ -794,6 +972,17 @@ G.DB = (() => {
       write(K_ACC, accs);
       remove(K_SAVE + key); remove(K_SES);
       user = key = save = null;
+      return { ok: true };
+    }
+    if (mode === 'server') {
+      if (!pass) return { ok: false, error: 'Escribe tu contraseña.' };
+      try { await G.SelfHost.deleteAccount(pass); }
+      catch (e) { return { ok: false, error: srvError(e) }; }
+      clearTimeout(pushT); clearTimeout(retryT); pending = false;
+      for (const fn of leaveHooks) { try { await fn('delete'); } catch (e) { /* nada */ } }
+      remove(K_SRV + key); remove(K_SRV_REV + key);
+      user = key = save = null; srvRev = 0;
+      setSync('ok');
       return { ok: true };
     }
     try {
@@ -854,7 +1043,7 @@ G.DB = (() => {
     /** ¿Está disponible lo online (amigos, ranking, multijugador)? */
     get online() { return mode === 'cloud' && !guest && !!uid && !!save; },
     /** ¿La cuenta es de usuario y contraseña (no de Google)? */
-    get nameAccount() { return nameAccount(); },
+    get nameAccount() { return mode === 'server' ? !guest && !!save : nameAccount(); },
     get hasGoogle() { return hasGoogle(); }, linkGoogle,
     get mode() { return mode; },
     get localReason() { return localReason; },

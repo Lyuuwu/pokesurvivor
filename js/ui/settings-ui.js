@@ -128,13 +128,14 @@ G.SettingsUI = (() => {
     const st = G.DB.guest ? 'guest' : G.DB.syncState;
     const SYNC = { ok: 'Guardado en la nube', syncing: 'Guardando…', pending: 'Pendiente de subir (se sube al salir del juego)',
                    offline: 'Sin conexión: se subirá al volver', local: 'Guardado sólo en este navegador', guest: 'Invitado: no se guarda' };
+    if (G.DB.mode === 'server') { SYNC.ok = 'Guardado en el servidor'; SYNC.pending = 'Pendiente de subir al servidor'; }
     if (G.DB.guest) {
       box.innerHTML = section('Cuenta', 'Estás jugando como <b>invitado</b>: tu progreso no se guarda al salir.')
         + `<button class="btn gold" id="set-login">Crear cuenta o entrar</button>`;
       return;
     }
     const nick = G.Social.me ? G.Social.me.name : (G.DB.user || '');
-    const kind = G.DB.mode === 'local' ? 'Cuenta de este navegador' : G.DB.nameAccount ? 'Nombre y contraseña' : 'Google';
+    const kind = G.DB.mode === 'local' ? 'Cuenta de este navegador' : G.DB.mode === 'server' ? 'Cuenta del servidor propio' : G.DB.nameAccount ? 'Nombre y contraseña' : 'Google';
     box.innerHTML = section('Cuenta')
       + `<div class="set-row"><div class="grow"><b>Apodo</b><small>Es único y no se puede cambiar.</small></div><span class="gold" translate="no">${esc(nick)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Tipo de cuenta</b></div><span>${esc(kind)}</span></div>`
