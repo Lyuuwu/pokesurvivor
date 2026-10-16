@@ -24,9 +24,9 @@ G.Pickups = (() => {
     item:     { color: '#ffd23f', glow: '#c08a10', r: 9 }       // value = id del objeto
   };
   /** Probabilidad de que un Pokémon normal suelte un ticket del gacha. */
-  const BOSS_T10 = 1 / 3;               // ticket ×10 de un jefe normal
-  const LEGEND_T10 = 1 / 2;             // ticket ×10 del legendario de la grieta
-  const TICKET_RATE = 1 / 400;          // (antes 1/260; más raros desde 2026-10-10)
+  const BOSS_T10 = 1;               // ticket ×10 de un jefe normal
+  const LEGEND_T10 = 1;             // ticket ×10 del legendario de la grieta
+  const TICKET_RATE = 1 / 200;      // (antes 1/260; más raros desde 2026-10-10)
 
   function clear() { list = []; }
   function all() { return list; }

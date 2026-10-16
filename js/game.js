@@ -291,7 +291,7 @@ G.Game = (() => {
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
-    const mul = pl.coinMul;
+    const mul = pl.coinMul * 3;
     const parts = {
       tiempo: Math.floor(time / 5),
       derrotados: Math.floor(pl.kills * 0.25),
@@ -302,6 +302,7 @@ G.Game = (() => {
     const record = time > save.stats.bestTime;
 
     save.coins += coins;
+    pl.t10 += 1;
     bankTickets(false);
     save.stats.runs++;
     save.stats.totalKills += pl.kills;
