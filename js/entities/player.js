@@ -61,6 +61,7 @@ G.Player = class Player {
     this.invuln = 0;
     this.flash = 0;
     this.aim = Math.PI / 2;
+    this.mouseAim = false;     // teclado + ratón: dirección independiente del movimiento
     this.moveAngle = Math.PI / 2;
     this.walking = false;
     this.inLiquid = false;
@@ -358,7 +359,14 @@ G.Player = class Player {
       }
     }
 
-    // --- apuntado: enemigo más cercano; si no hay, hacia donde caminas ---
+    this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? s / 110 : 1);
+  }
+
+  /** Después de mover la cámara: el ratón usa la misma vista que se dibuja. */
+  updateAim() {
+    if (this.dead || this.frozen) return;
+    this.mouseAim = !G.Touch.active || G.Input.mouse().active;
+    // Se conserva el blanco automático para cadenas, meteoros y controles táctiles.
     // Prioridad de blanco según el ataque activo:
     //   a distancia (proyectil, rayo): el jefe si está a tiro > lo que te toca > el más cercano
     //   cuerpo a cuerpo y el resto:   lo que te toca > el jefe > el más cercano
@@ -374,13 +382,17 @@ G.Player = class Player {
             || G.Projectiles.nearest(all, this.x, this.y, 520)
             || G.World.nearestBreakable(this.x, this.y, 200);
     this.target = tg;
-    if (tg) this.aim = Math.atan2(tg.y - this.y, tg.x - this.x);
+    if (this.mouseAim) {
+      const point = G.Input.mouseWorld();
+      if (point && G.U.dist2(this.x, this.y, point.x, point.y) > 1) {
+        this.aim = Math.atan2(point.y - this.y, point.x - this.x);
+      }
+    } else if (tg) this.aim = Math.atan2(tg.y - this.y, tg.x - this.x);
     else if (this.walking) this.aim = this.moveAngle;
 
-    // --- animación: mira al objetivo al atacar, si no a donde camina ---
-    const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
+    // Ratón: siempre mira al cursor. Táctil: mira al objetivo al atacar.
+    const face = this.mouseAim || this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
     this.anim.dir = G.Sprites.dirFromAngle(face);
-    this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? s / 110 : 1);
   }
 
   /** Vuelve a levantarse (lo revive un compañero en cooperativo). */
@@ -427,7 +439,8 @@ G.Player = class Player {
     this.walking = !!n.walk;
     this.moveAngle = n.ang;
     this.aim = n.aim;
-    const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
+    this.mouseAim = !!n.mouseAim;
+    const face = this.mouseAim || this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
     this.anim.dir = G.Sprites.dirFromAngle(face);
     this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? this.baseSpd / 110 : 1);
   }

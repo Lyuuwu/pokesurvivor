@@ -2,7 +2,7 @@
 G.Input = (() => {
   const down = new Set();
   const pressed = new Set();   // se limpia cada frame
-  let mx = 0, my = 0, mdown = false;
+  let mx = 0, my = 0, mdown = false, mouseActive = false;
 
   const MOVE_KEYS = {
     up: ['keyw', 'arrowup'], down: ['keys', 'arrowdown'],
@@ -19,10 +19,16 @@ G.Input = (() => {
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'space', 'tab'].includes(c)) e.preventDefault();
   });
   addEventListener('keyup', e => down.delete(code(e)));
-  addEventListener('blur', () => { down.clear(); });
-  addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
-  addEventListener('mousedown', () => mdown = true);
-  addEventListener('mouseup', () => mdown = false);
+  addEventListener('blur', () => { down.clear(); mdown = false; });
+  function pointer(e) {
+    mouseActive = e.pointerType === 'mouse';
+    if (mouseActive) { mx = e.clientX; my = e.clientY; }
+    else mdown = false;
+  }
+  addEventListener('pointermove', pointer);
+  addEventListener('pointerdown', e => { pointer(e); mdown = mouseActive; });
+  addEventListener('pointerup', () => mdown = false);
+  addEventListener('pointercancel', () => mdown = false);
 
   return {
     /** Vector de movimiento del jugador (teclado o joystick táctil). */
@@ -39,7 +45,17 @@ G.Input = (() => {
     held(c) { return down.has(c); },
     /** true sólo en el frame en que se pulsó. */
     tap(c) { return pressed.has(c); },
-    mouse() { return { x: mx, y: my, down: mdown }; },
+    mouse() { return { x: mx, y: my, down: mdown, active: mouseActive }; },
+    /** Posición del ratón en el mundo; null hasta usarlo o fuera del canvas. */
+    mouseWorld() {
+      if (!mouseActive) return null;
+      const cv = document.getElementById('game');
+      if (!cv) return null;
+      const rect = cv.getBoundingClientRect();
+      if (!rect.width || !rect.height || mx < rect.left || mx > rect.right || my < rect.top || my > rect.bottom) return null;
+      return G.Camera.screenToWorld((mx - rect.left) * cv.clientWidth / rect.width,
+                                    (my - rect.top) * cv.clientHeight / rect.height);
+    },
     endFrame() { pressed.clear(); }
   };
 })();

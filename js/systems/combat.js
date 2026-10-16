@@ -29,8 +29,9 @@ G.Combat = (() => {
 
     m.t -= dt;
     if (m.t > 0) return;
-    // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
-    if (needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
+    // Con ratón los direccionales pueden disparar al aire; el resto espera a un blanco.
+    const manual = pl.mouseAim && DIRECTIONAL.includes(m.kind);
+    if (!manual && needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
       m.t = 0.05;
       return;
     }
@@ -64,6 +65,7 @@ G.Combat = (() => {
   }
 
   const TARGETED = ['melee', 'beam', 'projectile', 'boomerang', 'chain', 'meteor', 'dash', 'cone'];
+  const DIRECTIONAL = ['melee', 'beam', 'projectile', 'boomerang', 'dash', 'cone'];
   function needsTarget(m) { return TARGETED.includes(m.kind); }
   function reach(m) {
     if (m.kind === 'melee') return m.radius + 30;

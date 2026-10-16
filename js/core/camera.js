@@ -48,6 +48,13 @@ G.Camera = {
                   Math.round((-this.top() + this._sy) * k) / k);
   },
 
+  /** Inversa de apply(), desde píxeles CSS del canvas (sin multiplicar por dpr). */
+  screenToWorld(x, y) {
+    const k = this.scale * this.dpr;
+    return { x: x / this.scale - Math.round((-this.left() + this._sx) * k) / k,
+             y: y / this.scale - Math.round((-this.top() + this._sy) * k) / k };
+  },
+
   left() { return this.x - this.w / 2; },
   top() { return this.y - this.h / 2; },
 

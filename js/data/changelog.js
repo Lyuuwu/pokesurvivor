@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-16', title: ['Apuntado con ratón', 'Mouse aiming'], chg: [
+    ['Con teclado y ratón, el Pokémon mira al cursor y los ataques direccionales se lanzan hacia él, incluso sin enemigos cerca. El movimiento sigue en el teclado; en móvil se mantiene el apuntado automático.',
+     'With keyboard and mouse, your Pokémon faces the cursor and directional attacks fire toward it, even without nearby enemies. Movement stays on the keyboard; mobile keeps automatic aiming.']
+  ] },
   { d: '2026-10-15', title: ['Actualizaciones obligatorias', 'Required updates'], chg: [
     ['Cuando una actualización sea obligatoria (por ejemplo, para arreglar un fallo importante), la partida en curso se termina tras un aviso de 10 s y el juego se recarga. No pierdes nada: las monedas, los tickets, los récords y el ranking de esa partida se guardan como al abandonarla.',
      'When an update is required (for example, to fix an important bug), your current run ends after a 10 s notice and the game reloads. You lose nothing: that run’s coins, tickets, records and leaderboard entry are saved as if you had quit.']

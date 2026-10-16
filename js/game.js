@@ -652,6 +652,7 @@ G.Game = (() => {
     }
     G.Camera.follow(pl.x, pl.y, dt);
     G.World.update(dt, G.Camera);
+    pl.updateAim();
 
     const all = everyone();
     if (!coop || G.Coop.isHost) { G.Path.update(dt, all); G.Spawner.update(dt, all, time); }
