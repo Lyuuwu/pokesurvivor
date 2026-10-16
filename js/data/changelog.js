@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-17', title: ['Exportar e importar la partida', 'Export and import your save'], new: [
+    ['En Ajustes > Cuenta puedes exportar tu partida a un archivo e importarla en otra web o aparato. Al importar se junta con tu partida: los Pokémon se suman, las monedas y los tickets no se duplican y un archivo viejo nunca quita nada.',
+     'In Settings > Account you can export your save to a file and import it on another site or device. Importing merges it with your game: Pokémon are combined, coins and tickets are not duplicated, and an old file never takes anything away.']
+  ] },
   { d: '2026-10-16', title: ['Apuntado con ratón', 'Mouse aiming'], chg: [
     ['Con teclado y ratón, el Pokémon mira al cursor y los ataques direccionales se lanzan hacia él, incluso sin enemigos cerca. El movimiento sigue en el teclado; en móvil se mantiene el apuntado automático.',
      'With keyboard and mouse, your Pokémon faces the cursor and directional attacks fire toward it, even without nearby enemies. Movement stays on the keyboard; mobile keeps automatic aiming.']

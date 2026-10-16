@@ -20,6 +20,10 @@
  * y se lee sólo al abrir Amigos o la sala (lo leído vale 1 min).
  *
  * El resto del juego escucha los cambios con G.Social.on(fn).
+ *
+ * Servidor propio (G.DB.selfHosted, ver selfhost.js): sin amigos, invitaciones
+ * ni perfil público. Uno crea la sala y los demás entran con su código de 4
+ * letras (room.id = el código). Ni Firestore ni Realtime Database.
  */
 G.Social = (() => {
   const VALID = /^[A-Za-z0-9_ñÑáéíóúÁÉÍÓÚ]{3,16}$/;
@@ -72,6 +76,7 @@ G.Social = (() => {
 
   /** Tras iniciar sesión. → 'ok' | 'need-nick' | 'off' (sin nube) */
   async function start() {
+    if (G.DB.selfHosted && G.SelfHost.me) return started ? 'ok' : selfStart();
     if (!G.DB.online) return 'off';
     if (started) return me ? 'ok' : 'need-nick';
     fb = G.DB.fb; uid = fb.uid;
@@ -170,8 +175,9 @@ G.Social = (() => {
     clearInterval(beatT); beatT = 0;
     document.removeEventListener('visibilitychange', onVisible);
     window.removeEventListener('pagehide', onHide);
-    if (me) await fb.fs.collection('pres').doc(uid).delete().catch(() => {});
-    if (why === 'delete') {
+    if (self()) G.SelfHost.rooms.close();
+    if (me && fb) await fb.fs.collection('pres').doc(uid).delete().catch(() => {});
+    if (why === 'delete' && fb) {
       try { localStorage.removeItem('ps.nick.' + uid); } catch (e) { /* nada */ }
       await deleteAll().catch(e => console.warn('[Social] borrar:', e));
     }
@@ -299,6 +305,43 @@ G.Social = (() => {
     return { name: me.name, dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner), at: ts() };
   }
 
+  // ---------------- servidor propio ----------------
+
+  const self = () => G.DB.mode === 'server';
+  let selfWired = false;
+
+  function selfStart() {
+    uid = G.SelfHost.me.id;
+    me = { uid, name: G.DB.user };
+    started = true;
+    if (!selfWired) {
+      selfWired = true;
+      G.SelfHost.rooms.on('room', selfRoom);
+    }
+    return 'ok';
+  }
+
+  /** Tu Pokémon en la sala (el nombre lo pone el servidor, el de tu cuenta). */
+  function selfInfo() {
+    const s = G.DB.save;
+    return { dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner) };
+  }
+
+  /** Estado de la sala que manda el servidor (null: cerrada o sin conexión). */
+  function selfRoom(st) {
+    if (!self()) return;
+    if (!st) { if (room) closedRoom(); return; }
+    room = { id: st.code, code: st.code, host: st.host, isHost: st.host === uid, members: st.members, open: st.open };
+    emit('room');
+  }
+
+  const SELF_ERR = {
+    'not-found': 'No hay ninguna sala con ese código.',
+    started: 'La partida de esa sala ya ha empezado.',
+    full: 'La sala está llena (máximo ' + MAX_PLAYERS + ').',
+    net: 'No se pudo conectar con el servidor.'
+  };
+
   /**
    * La Realtime Database sólo se conecta mientras estás en una sala: cada
    * conexión abierta gasta descargas (se pagan a partir de 360 MB al día).
@@ -310,6 +353,7 @@ G.Social = (() => {
 
   async function createRoom() {
     if (room) return room;
+    if (self()) { selfRoom(await G.SelfHost.rooms.create(selfInfo())); return room; }
     rtOn();
     const id = fb.rtdb.ref('rooms').push().key;
     await fb.rtdb.ref('rooms/' + id).set({ host: uid, open: true, at: ts(), m: { [uid]: memberInfo() } });
@@ -318,6 +362,14 @@ G.Social = (() => {
   }
 
   async function joinRoom(id) {
+    if (self()) {
+      const code = String(id || '').trim().toUpperCase();
+      if (!/^[A-Z]{4}$/.test(code)) return { ok: false, error: 'El código de la sala son 4 letras.' };
+      if (room && room.id === code) return { ok: true };
+      if (room) await leaveRoom();
+      try { selfRoom(await G.SelfHost.rooms.join(code, selfInfo())); return { ok: true }; }
+      catch (e) { return { ok: false, error: SELF_ERR[e && e.code] || 'No se pudo entrar en la sala.' }; }
+    }
     if (room && room.id === id) return { ok: true };
     if (room) await leaveRoom();
     rtOn();
@@ -385,6 +437,7 @@ G.Social = (() => {
 
   async function leaveRoom() {
     if (!room) return;
+    if (self()) { room = null; G.SelfHost.rooms.leave(); emit('room'); return; }
     const r = room;
     detachRoom();
     room = null;
@@ -399,12 +452,14 @@ G.Social = (() => {
 
   /** El anfitrión cierra la sala a nuevos jugadores al empezar la partida. */
   function setOpen(open) {
-    if (room && room.isHost) fb.rtdb.ref('rooms/' + room.id + '/open').set(!!open).catch(() => {});
+    if (room && room.isHost && self()) G.SelfHost.rooms.open(open);
+    else if (room && room.isHost) fb.rtdb.ref('rooms/' + room.id + '/open').set(!!open).catch(() => {});
   }
 
   /** Actualiza tu Pokémon en la sala (si cambias de compañero). */
   function refreshMember() {
-    if (room && me) fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update(
+    if (room && me && self()) G.SelfHost.rooms.member(selfInfo());
+    else if (room && me) fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update(
       { dex: G.DB.save.partner, shiny: !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner) }).catch(() => {});
   }
 

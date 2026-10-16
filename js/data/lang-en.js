@@ -592,5 +592,24 @@ G.I18n.add({
   'Cuenta del servidor propio': 'Self-hosted server account',
   'El código de invitación no es correcto.': 'The invite code is not correct.', 'Escribe el código de invitación.': 'Type the invite code.',
   'No se pudo conectar con el servidor.': 'Could not connect to the server.',
-  'La sesión ha caducado: vuelve a entrar para guardar en el servidor.': 'Your session expired: log in again to save on the server.'
+  'La sesión ha caducado: vuelve a entrar para guardar en el servidor.': 'Your session expired: log in again to save on the server.',
+  'Uno crea la sala y los demás entran con su código. Mejor que la cree quien tiene el servidor: así va más fluido.':
+    'One player creates the room and the others join with its code. Best if the host of the server creates it: it runs smoother.',
+  'Crear sala': 'Create room', 'Código de la sala': 'Room code', 'Unirse': 'Join',
+  'No hay ninguna sala con ese código.': 'There is no room with that code.', 'El código de la sala son 4 letras.': 'The room code is 4 letters.',
+  'No se pudo crear la sala.': 'Could not create the room.',
+  'Eres el anfitrión. Pasa el código de la sala a tus amigos (hasta {x}) y empezad cuando estéis.':
+    'You\'re the host. Give the room code to your friends (up to {x}) and start when you\'re ready.',
+  'Esperando a que tus amigos entren con el código…': 'Waiting for your friends to join with the code…',
+
+  // ---------------- exportar / importar partida ----------------
+  'Copia de la partida': 'Save backup',
+  'Para llevar tu progreso a otra web o aparato. Al importar se junta con tu partida: no se pierde nada.':
+    'To take your progress to another site or device. Importing merges it with your game: nothing is lost.',
+  'Exportar partida': 'Export save', 'Importar partida': 'Import save',
+  'Partida exportada: guarda el archivo para importarlo en otra web o aparato.': 'Save exported: keep the file to import it on another site or device.',
+  'Ese archivo no es una partida de PokéSurvivor.': 'That file is not a PokéSurvivor save.',
+  'Partida del archivo': 'Save in the file', 'Es de otra cuenta: se juntará igualmente con la tuya.': 'It belongs to another account: it will still be merged with yours.',
+  'Juntar con mi partida': 'Merge with my save', 'Partida importada: se ha juntado con la tuya.': 'Save imported: it was merged with yours.',
+  'Monedas': 'Coins'
 });

@@ -1008,6 +1008,46 @@ G.DB = (() => {
     } catch (e) { return { ok: false, error: authError(e) }; }
   }
 
+  // ---------------- exportar / importar ----------------
+  /*
+   * Para llevar la partida a otra web o aparato (p. ej. de la copia en GitHub
+   * Pages al servidor propio y vuelta) con un archivo. Importar NO sustituye:
+   * se JUNTA con merge(), así que subir un archivo viejo nunca quita nada y
+   * las monedas y tickets no se duplican (libreta por aparato).
+   */
+  function exportSave() {
+    if (guest || !save) return null;
+    fold(save);
+    return JSON.stringify(plain(save));
+  }
+
+  /** Lee una partida exportada sin tocar nada: → { ok, save, info } | { ok: false, error }. */
+  function readExport(text) {
+    const bad = { ok: false, error: 'Ese archivo no es una partida de PokéSurvivor.' };
+    let s;
+    try {
+      s = JSON.parse(String(text || '').replace(/^﻿/, ''));
+      if (typeof s === 'string') s = JSON.parse(s);           // copiada con comillas
+    } catch (e) { return bad; }
+    if (isObj(s) && isObj(s.save) && s.rev != null) s = s.save;  // archivo del servidor propio
+    if (!isObj(s) || !Number.isInteger(s.v) || !isObj(s.owned) || !isObj(s.stats)) return bad;
+    try { s = migrate(plain(s), s.name); } catch (e) { return bad; }
+    const t = s.tickets || {};
+    return { ok: true, save: s, info: {
+      name: String(s.name || ''), owned: Object.keys(s.owned).length, shiny: Object.keys(s.shiny || {}).length,
+      coins: s.coins | 0, t1: t.t1 | 0, t10: t.t10 | 0, runs: s.stats.runs | 0
+    } };
+  }
+
+  /** Junta una partida leída con readExport() con la tuya y la guarda. */
+  function importSave(s) {
+    if (guest || !save || !isObj(s)) return false;
+    applyInPlace(merge(plain(fold(save)), plain(s)));
+    save.name = user;
+    commit(true);
+    return true;
+  }
+
   // ---------------- helpers de partida ----------------
 
   function owns(dex) { return !!(save && save.owned[dex]); }
@@ -1035,6 +1075,7 @@ G.DB = (() => {
 
   return {
     ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
+    exportSave, readExport, importSave,
     owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
@@ -1042,6 +1083,8 @@ G.DB = (() => {
     get fb() { return mode === 'cloud' ? { auth, fs, rtdb, uid, emulator: !!(G.FIREBASE_CONFIG || {}).emulator } : null; },
     /** ¿Está disponible lo online (amigos, ranking, multijugador)? */
     get online() { return mode === 'cloud' && !guest && !!uid && !!save; },
+    /** ¿Con cuenta en el servidor propio? (salas por código, sin amigos ni ranking) */
+    get selfHosted() { return mode === 'server' && !guest && !!save; },
     /** ¿La cuenta es de usuario y contraseña (no de Google)? */
     get nameAccount() { return mode === 'server' ? !guest && !!save : nameAccount(); },
     get hasGoogle() { return hasGoogle(); }, linkGoogle,

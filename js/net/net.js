@@ -14,6 +14,10 @@
  * Se envía por el canal directo si está abierto; si no, por el relé. El que
  * recibe escucha los dos, así que no hace falta ponerse de acuerdo.
  *
+ * Servidor propio (python -m server): ni WebRTC ni Firebase. Todo va por el
+ * WebSocket de G.SelfHost y el servidor lo reenvía; cada pareja sale como
+ * mode 'server' (igual de rápida que 'direct').
+ *
  * API:  open(roomId, isHost, hostUid) · close() · send(to, msg) · toHost(msg)
  *       broadcast(msg) · on(fn(from, msg)) · onPeer(fn(uid, state))
  *       peers() · mode(uid) -> 'connecting' | 'direct' | 'relay' | 'closed'
@@ -29,7 +33,7 @@ G.Net = (() => {
 
 
   let rtdb = null, uid = null, roomId = null, isHost = false, hostUid = null;
-  let qref = null;
+  let qref = null, self = false, selfWired = false;
   const peers = new Map();         // uid -> { pc, dc, mode, timer }
   const handlers = new Set(), peerHandlers = new Set();
   let stats = { sent: 0, recv: 0, relaySent: 0 };
@@ -44,6 +48,16 @@ G.Net = (() => {
   function open(id, host, hostId) {
     if (roomId === id) return;
     close();
+    if (G.DB.mode === 'server') {
+      self = true; uid = G.SelfHost.me.id;
+      roomId = id; isHost = host; hostUid = hostId;
+      if (!selfWired) {
+        selfWired = true;
+        G.SelfHost.rooms.on('msg', (from, d) => { if (self && roomId && d) deliver(from, d); });
+      }
+      if (!isHost) serverPeer(hostId);
+      return;
+    }
     const fb = G.DB.fb;
     rtdb = fb.rtdb; uid = fb.uid;
     roomId = id; isHost = host; hostUid = hostId;
@@ -69,7 +83,13 @@ G.Net = (() => {
   function close() {
     for (const u of [...peers.keys()]) drop(u);
     if (qref) { qref.off(); qref = null; }
-    roomId = null; isHost = false; hostUid = null;
+    roomId = null; isHost = false; hostUid = null; self = false;
+  }
+
+  /** Servidor propio: la pareja está conectada mientras esté en la sala (lo lleva el servidor). */
+  function serverPeer(u) {
+    peers.set(u, { pc: null, dc: null, mode: 'server', timer: 0 });
+    emitPeer(u);
   }
 
   /** El anfitrión llama a esto cuando cambian los miembros de la sala. */
@@ -128,6 +148,7 @@ G.Net = (() => {
   /** Anfitrión: abre conexión con un invitado. */
   async function connect(u) {
     if (!roomId || peers.has(u)) return;
+    if (self) { serverPeer(u); return; }
     const p = newPeer(u);
     if (!p.pc) return;
     wireChannel(u, p, p.pc.createDataChannel('g', { ordered: true }));
@@ -191,6 +212,7 @@ G.Net = (() => {
     if (!roomId) return;
     const p = peers.get(to);
     stats.sent++;
+    if (self) { if (p) G.SelfHost.rooms.send(to, msg); return; }
     if (p && p.dc && p.dc.readyState === 'open') {
       try { p.dc.send(JSON.stringify(msg)); return; } catch (e) { /* cae al relé */ }
     }
@@ -215,7 +237,7 @@ G.Net = (() => {
     onPeer(fn) { peerHandlers.add(fn); },
     mode(u) { const p = peers.get(u); return p ? p.mode : 'closed'; },
     /** ¿Va por el relé (o no hay conexión)? Entonces se manda menos a menudo. */
-    slow(u) { const p = peers.get(u); return !p || p.mode !== 'direct'; },
+    slow(u) { const p = peers.get(u); return !p || (p.mode !== 'direct' && p.mode !== 'server'); },
     peers() { return [...peers.keys()]; },
     get open_() { return !!roomId; },
     get isHost() { return isHost; },

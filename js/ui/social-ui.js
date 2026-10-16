@@ -46,6 +46,8 @@
 
   /** Abre `fn` si tienes apodo; si no, pide el apodo primero. */
   function withNick(fn) {
+    // Servidor propio: el nombre de la cuenta ya es único; no hay apodo aparte.
+    if (G.DB.selfHosted) { G.Social.start().then(r => { if (r === 'ok') fn(); }); return; }
     if (!needOnline()) return;
     if (G.Social.me) { fn(); return; }
     G.Social.start().then(r => { if (r === 'ok') fn(); else G.NickUI.open(fn); });
@@ -64,6 +66,22 @@
         if (r.ok) $('fr-name').value = '';
       };
       $('fr-room').onclick = () => G.LobbyUI.open();
+      // Servidor propio: crear una sala o entrar con su código.
+      $('fr-create').onclick = async () => {
+        msg('');
+        $('fr-create').disabled = true;
+        try { await G.Social.createRoom(); G.LobbyUI.open(); }
+        catch (e) { msg(e && e.code === 'net' ? 'No se pudo conectar con el servidor.' : 'No se pudo crear la sala.', true); }
+        $('fr-create').disabled = false;
+      };
+      $('fr-join').onsubmit = async e => {
+        e.preventDefault();
+        msg('');
+        const r = await G.Social.joinRoom($('fr-code').value);
+        if (!r.ok) { msg(r.error, true); return; }
+        $('fr-code').value = '';
+        G.LobbyUI.open();
+      };
       G.Social.on(() => { if (G.UI.isOpen('scr-friends')) render(); });
     }
 
@@ -93,8 +111,12 @@
 
     function render() {
       const room = G.Social.room;
-      $('fr-me').innerHTML = 'Tu apodo: <b class="gold" translate="no">' + esc(G.Social.me ? G.Social.me.name : '') + '</b> · dáselo a tus amigos para que te añadan.';
+      const selfMode = G.DB.selfHosted;
       $('fr-room').classList.toggle('hidden', !room);
+      $('fr-self').classList.toggle('hidden', !selfMode);
+      for (const id of ['fr-me', 'fr-add', 'fr-list']) $(id).classList.toggle('hidden', selfMode);
+      if (selfMode) return;
+      $('fr-me').innerHTML = 'Tu apodo: <b class="gold" translate="no">' + esc(G.Social.me ? G.Social.me.name : '') + '</b> · dáselo a tus amigos para que te añadan.';
       const list = G.Social.friends.sort((a, b) => {
         const rank = f => f.status === 'in' ? 0 : f.status === 'ok' ? (f.online ? (f.play ? 2 : 1) : 3) : 4;
         return rank(a) - rank(b) || a.name.localeCompare(b.name);
@@ -184,16 +206,21 @@
       if (m.uid === room.host) return 'Anfitrión';
       if (!room.isHost) return m.uid === G.Social.uid ? 'Tú' : 'En la sala';
       const mode = G.Net.mode(m.uid);
-      return mode === 'direct' ? 'Conectado' : mode === 'relay' ? 'Conectado (por servidor)' : mode === 'failed' ? 'No se pudo conectar (reintentando…)' : 'Conectando…';
+      return mode === 'direct' || mode === 'server' ? 'Conectado' : mode === 'relay' ? 'Conectado (por servidor)' : mode === 'failed' ? 'No se pudo conectar (reintentando…)' : 'Conectando…';
     }
 
     function render() {
       const room = G.Social.room;
       if (!room) return;
       const ms = room.members;
+      const selfMode = !!room.code;
       $('lobby-sub').textContent = room.isHost
-        ? 'Eres el anfitrión. Invita a tus amigos (hasta ' + G.Social.MAX_PLAYERS + ') y empezad cuando estéis.'
+        ? (selfMode ? 'Eres el anfitrión. Pasa el código de la sala a tus amigos (hasta ' + G.Social.MAX_PLAYERS + ') y empezad cuando estéis.'
+          : 'Eres el anfitrión. Invita a tus amigos (hasta ' + G.Social.MAX_PLAYERS + ') y empezad cuando estéis.')
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
+      // Servidor propio: el código de la sala, bien grande.
+      $('lobby-code').classList.toggle('hidden', !selfMode);
+      if (selfMode) $('lobby-code-val').textContent = room.code;
 
       // Las tarjetas sólo se rehacen si cambian los miembros (los sprites no parpadean).
       const key = ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|');
@@ -222,7 +249,7 @@
       });
 
       // Invitar (sólo el anfitrión y si queda sitio).
-      const canInvite = room.isHost && ms.length < G.Social.MAX_PLAYERS;
+      const canInvite = room.isHost && !selfMode && ms.length < G.Social.MAX_PLAYERS;
       $('lobby-inv-title').classList.toggle('hidden', !canInvite);
       const inv = $('lobby-invite');
       inv.classList.toggle('hidden', !canInvite);
@@ -249,7 +276,7 @@
       btn.disabled = !room.isHost || ms.length < 2 || connecting || failed;
       btn.textContent = 'Empezar partida (' + ms.length + '/' + G.Social.MAX_PLAYERS + ')';
       $('lobby-note').textContent = !room.isHost ? 'Cuando el anfitrión empiece, entraréis todos a la vez.'
-        : ms.length < 2 ? 'Necesitas al menos un amigo en la sala.'
+        : ms.length < 2 ? (selfMode ? 'Esperando a que tus amigos entren con el código…' : 'Necesitas al menos un amigo en la sala.')
         : failed ? 'No se puede conectar con algún amigo: su red (o la tuya) no deja jugar en grupo. Probad con otra wifi o datos móviles; se reintenta solo.'
         : connecting ? 'Conectando con tus amigos…' : 'La partida empieza para todos a la vez.';
     }

@@ -11,6 +11,7 @@ from pathlib import Path
 
 from aiohttp import web
 
+from . import rooms
 from . import store as st
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -218,5 +219,6 @@ def make_app(dev=False):
         return err('not-found', 404)
 
     app.router.add_route('*', '/api/{rest:.*}', api_missing)
+    rooms.setup(app, db)
     app.router.add_get('/{path:.*}', static)
     return app

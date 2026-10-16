@@ -140,6 +140,12 @@ G.SettingsUI = (() => {
       + `<div class="set-row"><div class="grow"><b>Apodo</b><small>Es único y no se puede cambiar.</small></div><span class="gold" translate="no">${esc(nick)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Tipo de cuenta</b></div><span>${esc(kind)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Partida</b></div><span>${esc(SYNC[st] || st)}</span></div>`
+      + `<div class="set-row"><div class="grow"><b>Copia de la partida</b><small>Para llevar tu progreso a otra web o aparato. Al importar se junta con tu partida: no se pierde nada.</small></div></div>`
+      + `<div class="row wrap" style="gap:8px">
+           <button class="btn" id="set-export">Exportar partida</button>
+           <button class="btn" id="set-import">Importar partida</button>
+           <input type="file" id="set-file" accept=".json,application/json" class="hidden">
+         </div><div id="set-imp" class="hidden"></div>`
       + `<div class="row wrap" style="gap:8px;margin-top:12px">
            <button class="btn" id="set-logout">Cerrar sesión</button>
            <button class="btn danger" id="set-delete">Borrar cuenta</button>
@@ -154,6 +160,30 @@ G.SettingsUI = (() => {
     const full = $('set-full'); if (full) full.onclick = toggleFull;
     const lay = $('set-layout'); if (lay) lay.onclick = () => G.LayoutUI.open();
     box.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== G.I18n.lang) G.I18n.set(b.dataset.lang); }; });
+    const exp = $('set-export');
+    if (exp) exp.onclick = () => {
+      const text = G.DB.exportSave();
+      if (!text) return;
+      const d = new Date(), p2 = n => String(n).padStart(2, '0');
+      const name = `PokeSurvivor-${G.DB.user}-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}.json`;
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      $('set-msg').textContent = 'Partida exportada: guarda el archivo para importarlo en otra web o aparato.';
+    };
+    const imp = $('set-import'), file = $('set-file');
+    if (imp && file) {
+      imp.onclick = () => { file.value = ''; file.click(); };
+      file.onchange = async () => {
+        const f = file.files && file.files[0];
+        if (!f) return;
+        const r = G.DB.readExport(await f.text());
+        if (!r.ok) { $('set-msg').textContent = r.error; return; }
+        showImport(r);
+      };
+    }
     const lo = $('set-login'); if (lo) lo.onclick = () => { close(); leave(); };
     const out = $('set-logout'); if (out) out.onclick = () => { close(); leave(); };
     const del = $('set-delete');
@@ -168,6 +198,27 @@ G.SettingsUI = (() => {
       G.Audio.music(null);
       G.Flow.toLogin();
     };
+  }
+
+  /** Lo que trae el archivo, antes de juntarlo con tu partida. */
+  function showImport(r) {
+    const i = r.info, box = $('set-imp');
+    const other = i.name && i.name.toLowerCase() !== (G.DB.user || '').toLowerCase();
+    box.innerHTML = `<div class="set-row"><div class="grow"><b>Partida del archivo</b>`
+      + (other ? `<small>Es de otra cuenta: se juntará igualmente con la tuya.</small>` : '')
+      + `</div><span class="gold" translate="no">${esc(i.name)}</span></div>`
+      + `<p class="note"><span>Pokémon</span> <b>${i.owned}</b> · <span>Shiny</span> <b>${i.shiny}</b> · <span>Monedas</span> <b>${i.coins.toLocaleString('es')}</b>`
+      + ` · <span>Tickets</span> <b>${i.t1} / ${i.t10}</b> · <span>Runs</span> <b>${i.runs}</b></p>`
+      + `<div class="row wrap" style="gap:8px"><button class="btn gold" id="set-imp-ok">Juntar con mi partida</button>`
+      + `<button class="btn ghost" id="set-imp-no">Cancelar</button></div>`;
+    box.classList.remove('hidden');
+    $('set-imp-ok').onclick = () => {
+      if (!G.DB.importSave(r.save)) return;
+      if (G.UI.refreshCoins) G.UI.refreshCoins();
+      render();
+      G.UI.toast('Partida importada: se ha juntado con la tuya.', 3500);
+    };
+    $('set-imp-no').onclick = () => { box.classList.add('hidden'); box.innerHTML = ''; };
   }
 
   /** Cerrar sesión (si estás en una partida, se abandona). */
