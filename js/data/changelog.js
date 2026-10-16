@@ -9,6 +9,9 @@ G.CHANGELOG = [
   { d: '2026-10-16', title: ['Apuntado con ratón', 'Mouse aiming'], chg: [
     ['Con teclado y ratón, el Pokémon mira al cursor y los ataques direccionales se lanzan hacia él, incluso sin enemigos cerca. El movimiento sigue en el teclado; en móvil se mantiene el apuntado automático.',
      'With keyboard and mouse, your Pokémon faces the cursor and directional attacks fire toward it, even without nearby enemies. Movement stays on the keyboard; mobile keeps automatic aiming.']
+  ], new: [
+    ['Se añade la opción de chino tradicional, con un diccionario editable. Las entradas todavía sin traducir se muestran en inglés.',
+     'Traditional Chinese is now available with an editable dictionary. Entries that have not been translated yet fall back to English.']
   ] },
   { d: '2026-10-15', title: ['Actualizaciones obligatorias', 'Required updates'], chg: [
     ['Cuando una actualización sea obligatoria (por ejemplo, para arreglar un fallo importante), la partida en curso se termina tras un aviso de 10 s y el juego se recarga. No pierdes nada: las monedas, los tickets, los récords y el ranking de esa partida se guardan como al abandonarla.',

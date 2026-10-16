@@ -576,5 +576,9 @@ G.I18n.add({
   // ---------------- reportar marcas del ranking ----------------
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
-  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
+  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it',
+
+  // ---------------- perfil de prueba local ----------------
+  'Perfil de prueba local aplicado. Copia de seguridad guardada.': 'Local test profile applied. A backup was saved.',
+  'No se pudo aplicar el perfil de prueba local:': 'Could not apply the local test profile:'
 });

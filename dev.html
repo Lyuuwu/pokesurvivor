@@ -309,9 +309,9 @@
   (function () {
     var s = null; try { s = localStorage.getItem('ps.lang'); } catch (e) {}
     var n = ((navigator.languages && navigator.languages[0]) || navigator.language || 'es').toLowerCase();
-    var l = s === 'es' || s === 'en' ? s : (/\/en(\/|$)/.test(location.pathname) ? 'en' : (n.indexOf('es') === 0 ? 'es' : 'en'));
+    var l = ['es', 'en', 'zh-TW'].indexOf(s) >= 0 ? s : (/\/en(\/|$)/.test(location.pathname) ? 'en' : (n.indexOf('es') === 0 ? 'es' : /^zh-(tw|hk|mo|hant)/.test(n) ? 'zh-TW' : 'en'));
     document.documentElement.lang = l;
-    if (l === 'en') {
+    if (l !== 'es') {
       var p = document.querySelectorAll('#boot p');
       p[0].textContent = 'A Pokémon survival game, free in your browser and on mobile.';
       p[1].textContent = 'Loading…';
@@ -563,6 +563,7 @@
 <script defer src="js/core/util.js"></script>
 <script defer src="js/core/i18n.js"></script>
 <script defer src="js/data/lang-en.js"></script>
+<script defer src="js/data/lang-zh-TW.js"></script>
 <script defer src="js/core/settings.js"></script>
 <script defer src="js/data/music.js"></script>
 <script defer src="js/data/pokedex.js"></script>
@@ -581,6 +582,7 @@
 <script defer src="js/data/starters.js"></script>
 <script defer src="js/data/enemies.js"></script>
 <script defer src="js/data/upgrades.js"></script>
+<script defer src="js/data/local-test-profile.js"></script>
 <script defer src="js/data/items.js"></script>
 <script defer src="js/data/missions.js"></script>
 <script defer src="js/data/achievements.js"></script>
@@ -608,6 +610,7 @@
 <script defer src="js/systems/weather.js"></script>
 <script defer src="js/systems/pathing.js"></script>
 <script defer src="js/systems/progress.js"></script>
+<script defer src="js/systems/local-test-profile.js"></script>
 <script defer src="js/systems/hazards.js"></script>
 <!-- red: amigos, salas, cooperativo y ranking -->
 <script defer src="js/net/social.js"></script>

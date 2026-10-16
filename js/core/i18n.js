@@ -1,4 +1,4 @@
-/* ============ i18n.js — idiomas (español / inglés) ============
+/* ============ i18n.js — idiomas (español / inglés /繁體中文) ============
  * El juego está escrito en español. Si el idioma es inglés, todo texto que
  * se enseña se traduce con el diccionario de js/data/lang-en.js, sin tener que
  * tocar cada pantalla:
@@ -12,6 +12,8 @@
  *                                      (lo que cae en el hueco también se traduce)
  *   3. trozos dentro de un texto más largo, sólo palabras enteras
  * Lo que escriben los jugadores (apodos) va marcado con translate="no".
+ * 繁體中文: la segunda tabla traduce inglés -> zh-TW; los huecos vacíos
+ * dejan el texto en inglés. Fuente editable: locales/zh-TW.json.
  *
  * Idioma: el elegido en Ajustes; si no, /en/ en la dirección o el del navegador
  * (español si el navegador está en español, inglés en cualquier otro caso).
@@ -22,18 +24,20 @@ G.I18n = (() => {
   try { saved = localStorage.getItem(KEY); } catch (e) { /* nada */ }
   const byPath = /\/en(\/|$)/.test(location.pathname) ? 'en' : null;
   const nav = ((navigator.languages && navigator.languages[0]) || navigator.language || 'es').toLowerCase();
-  const lang = saved === 'es' || saved === 'en' ? saved : byPath || (nav.startsWith('es') ? 'es' : 'en');
+  const LANGS = ['es', 'en', 'zh-TW'];
+  const lang = LANGS.includes(saved) ? saved : byPath || (nav.startsWith('es') ? 'es' : /^zh-(tw|hk|mo|hant)/.test(nav) ? 'zh-TW' : 'en');
   document.documentElement.lang = lang;
 
-  const exact = new Map(), exactLow = new Map();
-  let patterns = [], frag = null, fragLow = null, fragMap = new Map();
+  const table = () => ({ exact: new Map(), exactLow: new Map(), patterns: [], frag: null, fragMap: new Map() });
+  const english = table(), traditional = table();
   const cache = new Map();
   const L = '\\p{L}\\p{N}';
   const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  /** Añade traducciones { 'texto en español': 'English text' }. */
-  function add(dict) {
-    const fr = [];
+  /** en: español -> inglés; zh-TW: inglés -> chino tradicional. */
+  function add(dict, language = 'en') {
+    if (language !== 'en' && language !== 'zh-TW') throw new Error('Unsupported dictionary: ' + language);
+    const { exact, exactLow, patterns, fragMap } = language === 'zh-TW' ? traditional : english;
     for (const [es, en] of Object.entries(dict)) {
       if (!en || es === en) continue;
       if (es.includes('{x}')) {
@@ -42,12 +46,13 @@ G.I18n = (() => {
       } else {
         exact.set(es, en);
         exactLow.set(es.toLowerCase(), en);
-        if (es.length >= 4 || /\s/.test(es)) { fr.push(es); fragMap.set(es.toLowerCase(), en); }
+        if (es.length >= 4 || /\s/.test(es)) fragMap.set(es.toLowerCase(), en);
       }
     }
     // Una sola expresión con todos los trozos (los más largos primero), sólo palabras enteras.
     const all = [...fragMap.keys()].sort((a, b) => b.length - a.length).map(reEsc).join('|');
-    frag = all ? new RegExp(`(?<![${L}])(${all})(?![${L}])`, 'giu') : null;
+    const dest = language === 'zh-TW' ? traditional : english;
+    dest.frag = all ? new RegExp(`(?<![${L}])(${all})(?![${L}])`, 'giu') : null;
     cache.clear();
   }
 
@@ -62,13 +67,15 @@ G.I18n = (() => {
     if (!/\p{L}/u.test(s)) return s;
     const c = cache.get(s);
     if (c !== undefined) return c;
-    let r = core(s);
+    let r = core(s, english);
+    if (lang === 'zh-TW') r = core(r, traditional);
     if (cache.size > 4000) cache.clear();
     cache.set(s, r);
     return r;
   }
 
-  function core(s) {
+  function core(s, dict) {
+    const { exact, exactLow, patterns, frag, fragMap } = dict;
     // Respeta los espacios de alrededor (nodos de texto del DOM).
     const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s);
     // Los textos del HTML pueden ocupar varias líneas: se comparan con los espacios juntos.
@@ -82,7 +89,7 @@ G.I18n = (() => {
         const mm = (upper ? p.reI : p.re).exec(body);
         if (!mm) continue;
         let i = 1;
-        r = p.en.replace(/\{x\}/g, () => { const g = mm[i++]; return g === undefined ? '' : core(g); });
+        r = p.en.replace(/\{x\}/g, () => { const g = mm[i++]; return g === undefined ? '' : core(g, dict); });
         r = keepCase(body, r);
         break;
       }
@@ -154,6 +161,7 @@ G.I18n = (() => {
   }
 
   function set(l) {
+    if (!LANGS.includes(l)) return;
     try { localStorage.setItem(KEY, l); } catch (e) { /* nada */ }
     location.reload();
   }

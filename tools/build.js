@@ -14,6 +14,9 @@ const ROOT = path.join(__dirname, '..');
 const DEV = path.join(ROOT, 'dev.html'), OUT = path.join(ROOT, 'index.html');
 const BEGIN = '<!-- scripts:begin -->', END = '<!-- scripts:end -->';
 
+// El JSON se compila también para file:// (sin fetch ni servidor local).
+execFileSync(process.execPath, [path.join(__dirname, 'build_locale.js')], { stdio: 'inherit' });
+
 const dev = fs.readFileSync(DEV, 'utf8');
 const i = dev.indexOf(BEGIN), j = dev.indexOf(END);
 if (i < 0 || j < 0) throw new Error('dev.html no tiene las marcas ' + BEGIN + ' / ' + END);

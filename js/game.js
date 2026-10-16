@@ -921,6 +921,9 @@ G.Flow = {
   toLogin() { G.Audio.music('village'); G.LoginUI.open(); },
   afterLogin() {
     G.Audio.music('village');
+    const preset = G.LocalTestProfile.apply();
+    if (preset.status === 'applied') G.UI.toast('Perfil de prueba local aplicado. Copia de seguridad guardada.', 5000);
+    else if (preset.status === 'error') G.UI.toast('No se pudo aplicar el perfil de prueba local: ' + preset.error, 6000);
     if (!G.DB.save.partner) G.TestUI.start();
     else this.goMenu();
   },
