@@ -8,9 +8,10 @@ keeps who is in which room and forwards messages:
                      { t:'create', dex, shiny }     new room (leaves any other)
                      { t:'join', code, dex, shiny }
                      { t:'leave' } · { t:'member', dex, shiny } · { t:'open', v } (host)
+                     { t:'ready', v }               guests: ready to start (the host waits for all)
                      { t:'send', to, d }            guests may only send to the host
   server -> client   { t:'hello', id, name }
-                     { t:'room', code, host, open, members:[{uid,name,dex,shiny,at}] }
+                     { t:'room', code, host, open, members:[{uid,name,dex,shiny,ready,at}] }
                      { t:'msg', f, d }              f is filled in by the server
                      { t:'closed' } · { t:'error', code, req } · { t:'replaced' }
 """
@@ -63,7 +64,7 @@ def setup(app, db):
     def member(user, data):
         dex = data.get('dex')
         return {'uid': user['id'], 'name': user['name'], 'dex': dex if isinstance(dex, int) else None,
-                'shiny': bool(data.get('shiny')), 'at': int(time.time() * 1000)}
+                'shiny': bool(data.get('shiny')), 'ready': False, 'at': int(time.time() * 1000)}
 
     def traffic(r, final=False):
         secs = max(1.0, time.time() - r['window'])
@@ -130,6 +131,9 @@ def setup(app, db):
         elif t == 'member' and r:
             m = member(user, data)
             r['members'][uid].update(dex=m['dex'], shiny=m['shiny'])
+            await announce(r)
+        elif t == 'ready' and r and r['host'] != uid:
+            r['members'][uid]['ready'] = bool(data.get('v'))
             await announce(r)
         elif t == 'open' and r and r['host'] == uid:
             r['open'] = bool(data.get('v'))

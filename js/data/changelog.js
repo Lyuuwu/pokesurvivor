@@ -6,7 +6,9 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-17', title: ['Exportar e importar la partida', 'Export and import your save'], new: [
+  { d: '2026-10-17', title: ['Copia de la partida y «Estoy listo» en la sala', 'Save backup and a ready check in co-op rooms'], new: [
+    ['Cooperativo: en la sala cada invitado pulsa «Estoy listo» y el anfitrión sólo puede empezar cuando lo están todos. Si vuelves al menú dejas de estar listo y, al acabar la partida, hay que pulsarlo otra vez.',
+     'Co-op: in the room every guest presses “I’m ready”, and the host can only start once everyone is. Going back to the menu clears it, and after a run you press it again.'],
     ['En Ajustes > Cuenta puedes exportar tu partida a un archivo e importarla en otra web o aparato. Al importar se junta con tu partida: los Pokémon se suman, las monedas y los tickets no se duplican y un archivo viejo nunca quita nada.',
      'In Settings > Account you can export your save to a file and import it on another site or device. Importing merges it with your game: Pokémon are combined, coins and tickets are not duplicated, and an old file never takes anything away.']
   ] },

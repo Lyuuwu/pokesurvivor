@@ -13,7 +13,7 @@
  * Salas (rooms): un WebSocket con el servidor (server/rooms.py) para crear o
  * entrar en una sala con su código y pasar los mensajes de la partida.
  *   rooms.create(info) / rooms.join(code, info) -> estado de la sala
- *   rooms.leave() · rooms.member(info) · rooms.open(v) · rooms.send(to, msg)
+ *   rooms.leave() · rooms.member(info) · rooms.ready(v) · rooms.open(v) · rooms.send(to, msg)
  *   rooms.on('room', fn(estado | null)) · rooms.on('msg', fn(from, msg))
  */
 G.SelfHost = (() => {
@@ -129,6 +129,7 @@ G.SelfHost = (() => {
     join(code, info) { return request(Object.assign({ t: 'join', code }, info)); },
     leave() { wsSend({ t: 'leave' }); },
     member(info) { wsSend(Object.assign({ t: 'member' }, info)); },
+    ready(v) { wsSend({ t: 'ready', v: !!v }); },
     open(v) { wsSend({ t: 'open', v: !!v }); },
     send(to, d) { return wsSend({ t: 'send', to, d }); },
     on(what, fn) { on[what].add(fn); },

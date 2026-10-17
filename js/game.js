@@ -945,6 +945,8 @@ G.Flow = {
   play() { G.Game.startRun(); },
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
+    // Al volver a la sala tras la partida hay que pulsar «Estoy listo» otra vez.
+    G.Social.setReady(false);
     if (G.Game.state !== 'ui' || !G.Social.room) return;
     G.LobbyUI.close();
     G.Game.startRun(cfg);

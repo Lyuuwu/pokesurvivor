@@ -302,7 +302,7 @@ G.Social = (() => {
 
   function memberInfo() {
     const s = G.DB.save;
-    return { name: me.name, dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner), at: ts() };
+    return { name: me.name, dex: s.partner, shiny: !!s.partnerShiny && G.DB.ownsShiny(s.partner), ready: false, at: ts() };
   }
 
   // ---------------- servidor propio ----------------
@@ -463,6 +463,20 @@ G.Social = (() => {
       { dex: G.DB.save.partner, shiny: !!G.DB.save.partnerShiny && G.DB.ownsShiny(G.DB.save.partner) }).catch(() => {});
   }
 
+  /**
+   * Invitado: «Estoy listo». El anfitrión sólo puede empezar cuando lo están
+   * todos; al empezar la partida (o volver al menú) se quita solo.
+   */
+  function setReady(v) {
+    if (!room || room.isHost || !me) return;
+    const mine = room.members.find(m => m.uid === uid);
+    if (!mine || !!mine.ready === !!v) return;
+    mine.ready = !!v;
+    if (self()) G.SelfHost.rooms.ready(v);
+    else fb.rtdb.ref('rooms/' + room.id + '/m/' + uid).update({ ready: !!v }).catch(() => {});
+    emit('room');
+  }
+
   // ---------------- invitaciones ----------------
 
   async function invite(other) {
@@ -576,7 +590,7 @@ G.Social = (() => {
 
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence,
+    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setReady, setPlaying, refreshPresence,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },
