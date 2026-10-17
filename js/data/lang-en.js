@@ -284,7 +284,7 @@ G.I18n.add({
   'Proyecto de fan sin ánimo de lucro · Sprites: SpriteCollab (CC BY-NC 4.0) · Pokémon © Nintendo/Creatures/GAME FREAK ·': 'Non-profit fan project · Sprites: SpriteCollab (CC BY-NC 4.0) · Pokémon © Nintendo/Creatures/GAME FREAK ·',
   'Aviso legal': 'Legal notice',
   // colección
-  'Volver': 'Back', 'Todos': 'All', 'Tengo': 'Owned', 'Me faltan': 'Missing', 'Legendaria': 'Legendary', 'Épica': 'Epic', 'Rara': 'Rare',
+  'Volver': 'Back', 'Todos': 'All', 'Todas': 'All', 'Tengo': 'Owned', 'Me faltan': 'Missing', 'Legendaria': 'Legendary', 'Épica': 'Epic', 'Rara': 'Rare',
   'Poco común': 'Uncommon', 'Común': 'Common', 'Ninguno con este filtro.': 'None with this filter.', 'Ataque': 'Attack', 'Vida': 'HP', 'Velocidad': 'Speed',
   'Empieza con': 'Starts with', 'Es tu compañero': 'It\'s your partner', 'Elegir de compañero{x}': 'Choose as partner{x}', '(shiny)': '(shiny)',
   'Aún no lo tienes.': 'You don\'t have it yet.', 'Consíguelo en el banner de': 'Get it from the banner of', 'o derrotándolo cuando salga shiny.': 'or by defeating it when it shows up shiny.',
@@ -380,6 +380,7 @@ G.I18n.add({
   'Estoy listo': 'I\'m ready', 'Ya no estoy listo': 'Cancel ready', 'Listo': 'Ready', 'No está listo': 'Not ready',
   'Pulsa «Estoy listo»: el anfitrión sólo puede empezar cuando estéis todos listos.': 'Press “I\'m ready”: the host can only start once you\'re all ready.',
   'Esperando a que todos estén listos ({x})': 'Waiting for everyone to be ready ({x})',
+  'Copiar': 'Copy', 'Código copiado': 'Code copied', 'No se pudo copiar el código': 'Couldn\'t copy the code',
   'Eres el anfitrión. Invita a tus amigos (hasta {x}) y empezad cuando estéis.': 'You\'re the host. Invite your friends (up to {x}) and start when you\'re ready.',
   'Estás en la sala de {x}. El anfitrión empezará la partida.': 'You\'re in {x}\'s room. The host will start the game.',
   'Cuando el anfitrión empiece, entraréis todos a la vez.': 'When the host starts, you\'ll all join at the same time.', 'La partida empieza para todos a la vez.': 'The game starts for everyone at once.',

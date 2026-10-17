@@ -181,6 +181,12 @@
         if (mine) G.Social.setReady(!mine.ready);
       };
       $('lobby-ready').dataset.sfx = 'confirm';
+      // Copiar el código de la sala (el botón o el propio código) para pegárselo a los amigos.
+      $('lobby-copy').onclick = $('lobby-code-val').onclick = async () => {
+        const room = G.Social.room;
+        if (!room || !room.code) return;
+        G.UI.toast(await copyText(room.code) ? 'Código copiado' : 'No se pudo copiar el código', 2200);
+      };
       // Conecta / desconecta la red al entrar o salir de una sala.
       G.Social.on(what => {
         const room = G.Social.room;
@@ -207,6 +213,26 @@
     }
 
     function close() { G.UI.hide('scr-lobby'); }
+
+    /**
+     * Copia un texto al portapapeles. Por http://IP (el servidor propio visto
+     * desde otro ordenador) no hay navigator.clipboard: se copia a la antigua.
+     */
+    async function copyText(t) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(t); return true; }
+      } catch (e) { /* a la antigua */ }
+      const ta = document.createElement('textarea');
+      ta.value = t;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { /* nada */ }
+      ta.remove();
+      return ok;
+    }
 
     function myMember() {
       const room = G.Social.room;

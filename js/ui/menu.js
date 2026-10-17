@@ -2,7 +2,9 @@
 G.MenuUI = (() => {
   const $ = G.UI.$;
   const GEN_NAMES = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Teselia', 'Kalos', 'Alola', 'Galar', 'Paldea'];
-  let dexFilter = 'all', dexGen = 1, dexSel = null;
+  let dexFilter = 'all', dexGen = 1, dexSel = null;     // dexGen 0 = todas las regiones
+  let dexShiny = false;
+  const dexRarity = new Set();                           // vacío = todas las rarezas
 
   function init() {
     const ICON = { play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
@@ -108,13 +110,12 @@ G.MenuUI = (() => {
     const owned = Object.keys(s.owned).filter(d => G.DEX_BY[d]).length;
     $('dex-total').textContent = `${owned} / ${G.DEX.length}`;
 
-    // Pestañas de generación, con cuántos tienes de cada una.
+    // Pestañas de generación (0 = todas), con cuántos tienes de cada una.
     const tabs = $('dex-gens');
     tabs.innerHTML = '';
-    GEN_NAMES.forEach((name, i) => {
-      const g = i + 1;
-      const total = G.DEX.filter(p => p.gen === g).length;
-      const have = G.DEX.filter(p => p.gen === g && s.owned[p.dex]).length;
+    ['Todas'].concat(GEN_NAMES).forEach((name, g) => {
+      const total = G.DEX.filter(p => !g || p.gen === g).length;
+      const have = G.DEX.filter(p => (!g || p.gen === g) && s.owned[p.dex]).length;
       const b = document.createElement('button');
       b.className = 'gen-tab' + (g === dexGen ? ' on' : '');
       b.innerHTML = `<b>${name}</b><small>${have}/${total}</small>`;
@@ -122,17 +123,21 @@ G.MenuUI = (() => {
       tabs.appendChild(b);
     });
 
-    const F = [['all', 'Todos'], ['own', 'Tengo'], ['miss', 'Me faltan'], ['shiny', 'Shiny'],
-               ['5', 5], ['4', 4], ['3', 3], ['2', 2], ['1', 1]];
+    // Filtros que se combinan: si lo tienes (uno) + shiny y rarezas (varios a la vez).
     const fb = $('dex-filters');
     fb.innerHTML = '';
-    for (const [k, label] of F) {
+    const chip = (html, on, click) => {
       const c = document.createElement('button');
-      c.className = 'chip' + (k === dexFilter ? ' on' : '');
-      c.innerHTML = k === 'shiny' ? G.Icons.html('shiny', 12) + ' Shiny'
-                  : typeof label === 'number' ? G.Icons.rarity(label, 12) + ' ' + G.Gacha.RARITY_NAME[label] : label;
-      c.onclick = () => { dexFilter = k; openDex(); };
+      c.className = 'chip' + (on ? ' on' : '');
+      c.innerHTML = html;
+      c.onclick = () => { click(); openDex(); };
       fb.appendChild(c);
+    };
+    for (const [k, label] of [['all', 'Todos'], ['own', 'Tengo'], ['miss', 'Me faltan']]) chip(label, dexFilter === k, () => { dexFilter = k; });
+    fb.insertAdjacentHTML('beforeend', '<span class="chip-sep"></span>');
+    chip(G.Icons.html('shiny', 12) + ' Shiny', dexShiny, () => { dexShiny = !dexShiny; });
+    for (const r of [5, 4, 3, 2, 1]) {
+      chip(G.Icons.rarity(r, 12) + ' ' + G.Gacha.RARITY_NAME[r], dexRarity.has(r), () => { if (!dexRarity.delete(r)) dexRarity.add(r); });
     }
     renderGrid();
     showDetail(dexSel);
@@ -143,12 +148,12 @@ G.MenuUI = (() => {
     const grid = $('dex-grid');
     grid.innerHTML = '';
     for (const p of G.DEX) {
-      if (p.gen !== dexGen) continue;
+      if (dexGen && p.gen !== dexGen) continue;
       const own = !!s.owned[p.dex], sh = !!(s.shiny && s.shiny[p.dex]);
       if (dexFilter === 'own' && !own) continue;
       if (dexFilter === 'miss' && own) continue;
-      if (dexFilter === 'shiny' && !sh) continue;
-      if (/^\d$/.test(dexFilter) && p.rarity !== +dexFilter) continue;
+      if (dexShiny && !sh) continue;
+      if (dexRarity.size && !dexRarity.has(p.rarity)) continue;
 
       const cell = document.createElement('div');
       cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === dexSel ? ' on' : '');
@@ -235,7 +240,8 @@ G.MenuUI = (() => {
   function openUpgrades() {
     G.UI.show('scr-upgrades', true);
     const s = G.DB.save;
-    if (!upgDex || !s.owned[upgDex]) upgDex = s.partner;
+    // Siempre empieza en el compañero que llevas (antes se quedaba en el último que miraste).
+    upgDex = s.partner;
     // Selector con tus Pokémon: el compañero primero, luego los que ya tienen mejoras.
     const sel = $('upg-mon');
     const lv = d => Object.values(s.pupg[d] || {}).reduce((a, b) => a + b, 0);

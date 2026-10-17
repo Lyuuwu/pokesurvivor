@@ -6,11 +6,18 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-17', title: ['Copia de la partida y «Estoy listo» en la sala', 'Save backup and a ready check in co-op rooms'], new: [
+  { d: '2026-10-17', title: ['Copia de la partida, sala con «Estoy listo» y filtros de Pokémon', 'Save backup, co-op ready check and Pokémon filters'], new: [
     ['Cooperativo: en la sala cada invitado pulsa «Estoy listo» y el anfitrión sólo puede empezar cuando lo están todos. Si vuelves al menú dejas de estar listo y, al acabar la partida, hay que pulsarlo otra vez.',
      'Co-op: in the room every guest presses “I’m ready”, and the host can only start once everyone is. Going back to the menu clears it, and after a run you press it again.'],
     ['En Ajustes > Cuenta puedes exportar tu partida a un archivo e importarla en otra web o aparato. Al importar se junta con tu partida: los Pokémon se suman, las monedas y los tickets no se duplican y un archivo viejo nunca quita nada.',
-     'In Settings > Account you can export your save to a file and import it on another site or device. Importing merges it with your game: Pokémon are combined, coins and tickets are not duplicated, and an old file never takes anything away.']
+     'In Settings > Account you can export your save to a file and import it on another site or device. Importing merges it with your game: Pokémon are combined, coins and tickets are not duplicated, and an old file never takes anything away.'],
+    ['Cooperativo: botón «Copiar» junto al código de la sala (o toca el código) para pasárselo a tus amigos sin escribirlo.',
+     'Co-op: a “Copy” button next to the room code (or tap the code) so you can send it to your friends without typing it.'],
+    ['Pokémon: pestaña «Todas» con las nueve regiones juntas, y los filtros se combinan: Tengo / Me faltan con Shiny y una o varias rarezas (por ejemplo, todos tus legendarios de una vez).',
+     'Pokémon: an “All” tab with the nine regions together, and the filters now combine: Owned / Missing with Shiny and one or more rarities (for example, all your legendaries at once).']
+  ], chg: [
+    ['Mejoras: al entrar se abre siempre el Pokémon que llevas de compañero, no el último que miraste.',
+     'Upgrades: it always opens on your current partner, not the last Pokémon you looked at.']
   ], fix: [
     ['Ya no te quedas atascado entre árboles, rocas y paredes que se ven separados: contra el escenario sólo chocan los pies de tu Pokémon y el tronco de los árboles, no todo el cuerpo ni la copa. Los enemigos también rodean mejor los bosques.',
      'You no longer get stuck between trees, rocks and walls that look far enough apart: only your Pokémon’s feet and the tree trunks collide with the scenery, not the whole body or the treetop. Enemies also get around forests more easily.']

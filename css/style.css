@@ -231,6 +231,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   text-shadow: 1px 1px 0 var(--shadow);
 }
 .chip.on { border-color: var(--gold); color: var(--gold); }
+.chip-sep { width: 1px; align-self: stretch; margin: 0 4px; background: rgba(244,248,255,.18); flex: 0 0 1px; }
 
 /* ---------- menú principal ---------- */
 #scr-menu { justify-content: space-between; align-items: stretch; padding: 0; }
