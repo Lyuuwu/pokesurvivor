@@ -140,7 +140,10 @@ def setup(app, db):
             await announce(r)
 
     async def ws_handler(req):
-        ws = web.WebSocketResponse(heartbeat=25, max_msg_size=512 * 1024)
+        # compress: los fotogramas de la partida son JSON muy repetido; comprimidos
+        # (permessage-deflate, todos los navegadores) ocupan varias veces menos, y
+        # con una conexión justa llegan sin amontonarse (tirones) ni atascarse.
+        ws = web.WebSocketResponse(heartbeat=25, max_msg_size=512 * 1024, compress=True)
         await ws.prepare(req)
         user = None
         try:
@@ -172,6 +175,10 @@ def setup(app, db):
         finally:
             if user and clients.get(user['id']) is ws:
                 clients.pop(user['id'], None)
+                if where.get(user['id']):
+                    # Para saber por qué se cae alguien de una sala (red, cierre del navegador...).
+                    log.info('%s se desconectó de la sala %s（code %s%s）', user['name'], where[user['id']],
+                             ws.close_code, ', ' + repr(ws.exception()) if ws.exception() else '')
                 await leave(user['id'])
         return ws
 

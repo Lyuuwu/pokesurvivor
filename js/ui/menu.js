@@ -299,6 +299,13 @@ G.MenuUI = (() => {
     renderUpgrades();
   }
 
+  /** Lo que cuesta subir todas las mejoras de monedas que faltan hasta el máximo. */
+  function maxAllCost(levels) {
+    let t = 0;
+    for (const u of G.Upgrades.LIST) for (let l = levels[u.id] || 0; l < u.max; l++) t += G.Upgrades.cost(u.id, l);
+    return t;
+  }
+
   function renderUpgrades() {
     const s = G.DB.save;
     const levels = G.DB.upgradesOf(upgDex);
@@ -308,6 +315,23 @@ G.MenuUI = (() => {
     $('upg-stage').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('upg-stats').innerHTML = statsBlock(upgDex, shiny);
     $('upg-name').innerHTML = mon.name + (upgDex === s.partner ? ' <span class="sub">(compañero)</span>' : '');
+    // Mejorar todo al máximo de una vez (sólo si te llega para todo).
+    const left = maxAllCost(levels), mb = $('upg-max');
+    mb.classList.toggle('hidden', !left);
+    mb.classList.toggle('gold', !!left && s.coins >= left);
+    mb.disabled = !left || s.coins < left;
+    mb.innerHTML = `Mejorar todo al máximo · <span class="coin"></span> ${left}`;
+    mb.onclick = () => {
+      const sv = G.DB.save, lv = G.DB.upgradesOf(upgDex), price = maxAllCost(lv);
+      if (!price || sv.coins < price) { renderUpgrades(); return; }
+      sv.coins -= price;
+      for (const u of G.Upgrades.LIST) lv[u.id] = u.max;
+      G.DB.commit(true);
+      G.Audio.sfx('buy');
+      G.UI.refreshCoins();
+      G.UI.toast(`${mon.name}: todas las mejoras al máximo`);
+      renderUpgrades();
+    };
     const box = $('upg-list');
     box.innerHTML = '';
     for (const u of G.Upgrades.LIST) {

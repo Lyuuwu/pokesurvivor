@@ -328,9 +328,9 @@ G.Social = (() => {
   }
 
   /** Estado de la sala que manda el servidor (null: cerrada o sin conexión). */
-  function selfRoom(st) {
+  function selfRoom(st, why) {
     if (!self()) return;
-    if (!st) { if (room) closedRoom(); return; }
+    if (!st) { if (room) closedRoom(why); return; }
     room = { id: st.code, code: st.code, host: st.host, isHost: st.host === uid, members: st.members, open: st.open };
     emit('room');
   }
@@ -425,8 +425,11 @@ G.Social = (() => {
     roomRefs = [];
   }
 
-  function closedRoom() {
+  let closeWhy = '';
+  /** @param why  servidor propio: 'host' | 'net' | 'replaced' (ver selfhost.js) */
+  function closedRoom(why = 'host') {
     if (!room) return;
+    closeWhy = why;
     detachRoom();
     room = null;
     retractInvites();
@@ -598,6 +601,8 @@ G.Social = (() => {
     get friends() { return [...friends.values()]; },
     get invites() { return [...invites.values()]; },
     get room() { return room; },
+    /** Por qué se cerró la última sala: 'host' | 'net' | 'replaced'. */
+    get closeWhy() { return closeWhy; },
     get uid() { return uid; },
     /** La hora real (corrige el reloj del aparato si va desfasado). */
     now,

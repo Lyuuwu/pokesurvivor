@@ -3689,5 +3689,10 @@ G.I18n.add({
   "Auto-lock aim: nearest enemy or the boss": "自動鎖定模式：攻擊最近的敵人或頭目",
   "Mouse aim": "鼠標瞄準模式",
   "The in-run bonuses at the top left now also show critical chance (max 100%) and experience bonus.": "遊戲中左上角的加成也會顯示暴擊率（上限 100%）和經驗加成。",
-  "Keyboard and mouse: press R to switch between mouse aim and auto-lock (the original mode: attacks go to the nearest enemy or the boss). The current mode shows at the top left and is remembered on this device.": "鍵盤滑鼠：按 R 切換鼠標瞄準和自動鎖定（原本的模式：自動攻擊最近的敵人或頭目）。目前的模式顯示在左上角，並會記在這台裝置上。"
+  "Keyboard and mouse: press R to switch between mouse aim and auto-lock (the original mode: attacks go to the nearest enemy or the boss). The current mode shows at the top left and is remembered on this device.": "鍵盤滑鼠：按 R 切換鼠標瞄準和自動鎖定（原本的模式：自動攻擊最近的敵人或頭目）。目前的模式顯示在左上角，並會記在這台裝置上。",
+  "Max everything ·": "一鍵強化全滿 ·",
+  "{x}: all upgrades maxed": "{x}：全部強化已滿",
+  "Lost connection to the server: join again with the code": "與伺服器的連線中斷：請用房間代碼重新加入",
+  "Your account signed in on another tab or device": "你的帳號在其他分頁或裝置登入了",
+  "Upgrades: a “Max everything” button raises every coin upgrade of that Pokémon to the max in one go. It only works when you can afford all of it, and shows the total price.": "強化：新增「一鍵強化全滿」按鈕，一次把這隻寶可夢所有用金幣的強化升到滿。只有金幣足夠全部升滿時才能按，並會顯示總價。"
 }, "zh-TW");

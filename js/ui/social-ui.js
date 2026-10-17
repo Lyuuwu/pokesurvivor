@@ -195,7 +195,9 @@
           G.Net.syncMembers(room.members.map(m => m.uid));
         } else if (G.Net.open_) G.Net.close();
         if (what === 'room-closed') {
-          G.UI.toast('La sala se ha cerrado', 2600);
+          const why = G.Social.closeWhy;
+          G.UI.toast(why === 'net' ? 'Se ha cortado la conexión con el servidor: vuelve a entrar con el código'
+            : why === 'replaced' ? 'Tu cuenta ha entrado en otra pestaña o aparato' : 'La sala se ha cerrado', 3600);
           if (G.UI.isOpen('scr-lobby')) G.MenuUI.open();
         }
         if (G.UI.isOpen('scr-lobby')) render();

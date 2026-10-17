@@ -14,7 +14,9 @@
  * entrar en una sala con su código y pasar los mensajes de la partida.
  *   rooms.create(info) / rooms.join(code, info) -> estado de la sala
  *   rooms.leave() · rooms.member(info) · rooms.ready(v) · rooms.open(v) · rooms.send(to, msg)
- *   rooms.on('room', fn(estado | null)) · rooms.on('msg', fn(from, msg))
+ *   rooms.on('room', fn(estado | null, por qué)) · rooms.on('msg', fn(from, msg))
+ *   (por qué, al cerrarse: 'host' la cerró el anfitrión, 'net' se cortó la conexión,
+ *   'replaced' tu cuenta entró en otra pestaña o aparato)
  */
 G.SelfHost = (() => {
   const K_TOKEN = 'ps.srv.token', K_ME = 'ps.srv.me';
@@ -78,17 +80,19 @@ G.SelfHost = (() => {
         try { m = JSON.parse(e.data); } catch (err) { return; }
         if (m.t === 'msg') emit('msg', m.f, m.d);
         else if (m.t === 'room') { settle(null, m); emit('room', m); }
-        else if (m.t === 'closed') emit('room', null);
+        else if (m.t === 'closed') emit('room', null, 'host');
+        else if (m.t === 'replaced') s.replaced = true;
         else if (m.t === 'hello') { clearTimeout(late); resolve(); }
         else if (m.t === 'error') { if (m.req === 'auth') reject({ code: 'auth' }); else settle(m); }
         // 'replaced': la misma cuenta se ha conectado en otra pestaña o aparato; el servidor cierra esta.
       };
-      s.onclose = () => {
+      s.onclose = e => {
         clearTimeout(late);
-        if (ws === s) { ws = null; wsReady = null; }
+        const lost = ws === s;          // si no, la cerramos nosotros (salir, cerrar sesión)
+        if (lost) { ws = null; wsReady = null; console.warn('[SelfHost] conexión cortada, code', e.code, e.reason || ''); }
         reject({ code: 'net' });
         settle({ code: 'net' });
-        emit('room', null);
+        emit('room', null, s.replaced ? 'replaced' : lost ? 'net' : 'host');
       };
     });
     wsReady.catch(() => { wsReady = null; });
