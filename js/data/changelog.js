@@ -8,8 +8,10 @@
  * todos los idiomas; en chino, traducido si está en locales/zh-TW.json).
  */
 G.CHANGELOG = [
-  { d: '2026-10-17', title: 'Duplicate copies, shiny boost, co-op auto-revive, ready check and Pokémon filters', new: [
+  { d: '2026-10-17', title: 'Region collection, duplicate copies, shiny boost, co-op auto-revive and more', new: [
     'Duplicates: every time the gacha gives you a Pokémon you already have, it gains a copy (up to 20). Each copy gives that Pokémon a bonus on top of its upgrades: more damage, level-up card rerolls, critical chance or speed (all 20: +16% damage, +6 rerolls, +18% critical chance, +12% speed). See them in Upgrades. Duplicates still give coins too. Existing saves start at 0 copies.',
+    'Regions matter: every 10% of a region’s collection (the gacha banners) is a level that makes that region’s Pokémon stronger: +1% speed, +0.8% damage, +0.5% critical chance, +0.5% defense and +0.3% HP per level. The shiny collection counts separately and gives triple. At 100%, a region gives its bonus to every Pokémon. All regions together cap at +50% speed and damage, +30% critical chance and defense, and +20% HP. See it in Pokémon and on each gacha banner.',
+    'Gacha: tap once to speed up the slot machine, tap again to jump straight to the results.',
     'Duplicates of legendaries (★5) give more per copy: +6% damage, +2 rerolls, +5% critical chance or +5% speed (all 20: +24% damage, +12 rerolls, +30% critical chance, +20% speed).',
     'Shiny boost: playing with a shiny makes it stronger in everything. HP, damage and speed go up depending on rarity, so a common Pokémon’s shiny is about as strong as a base legendary (Common: +25% HP, +35% damage, +20% speed · Uncommon: +20% / +25% / +16% · Rare: +15% / +15% / +12% · Epic: +12% / +10% / +10% · Legendary: +10% / +10% / +8%), and every shiny gets +10% defense and +10% critical chance.',
     'Pokémon and Upgrades show what your Pokémon starts a run with: HP, strength, speed, cooldown, armor and critical chance, with upgrades, copies and shiny included (the gold part of each bar).',

@@ -5,12 +5,19 @@ G.GachaUI = (() => {
   const $ = G.UI.$;
   let busy = false;
   let gen = 1;
+  let phase = '', skipCards = false;     // tirada en curso: 'slot' (tragaperras) o 'cards' (cartas saliendo)
 
   function init() {
     $('pull-1').onclick = () => pull(1);
     $('pull-10').onclick = () => pull(10, 't1');
     $('pull-10b').onclick = () => pull(10, 't10');
     $('pull-close').onclick = close;
+    // Tocar en cualquier parte durante la tirada: 1.º más rápido, 2.º directo a los resultados.
+    $('pull-fx').onclick = e => {
+      if (!busy || e.target.closest('#pull-close')) return;
+      if (phase === 'slot') G.Slots.tap();
+      else if (phase === 'cards') skipCards = true;
+    };
 
     const tabs = $('gacha-gens');
     G.Gacha.BANNERS.forEach(b => {
@@ -43,8 +50,11 @@ G.GachaUI = (() => {
        linear-gradient(135deg, ${c1}, ${c2} 55%, ${c3})`;
     $('banner-title').textContent = banner.name + ' Misterioso';
     $('banner-desc').textContent = `Los ${all.length} Pokémon de la generación ${gen}. ¡Los legendarios esperan!`;
+    // Nivel de colección de la región (data/upgrades.js: regions): cada 10%, más fuertes sus Pokémon.
+    const reg = G.Upgrades.regions(s)[gen - 1];
     $('gacha-owned').innerHTML = `Tienes ${owned} de ${all.length}` +
-      (shinies ? ` · ${G.Icons.html('shiny', 12)} ${shinies} shiny` : '');
+      (shinies ? ` · ${G.Icons.html('shiny', 12)} ${shinies} shiny` : '') +
+      `<br><span>Colección: nivel ${reg.tier}/10</span>` + (reg.sTier ? ` · <span>Shiny: nivel ${reg.sTier}/10</span>` : '');
 
     const feat = $('gacha-feat');
     feat.innerHTML = '';
@@ -61,7 +71,7 @@ G.GachaUI = (() => {
       `<div><span>${G.Icons.html('shiny', 12)} Shiny</span><span>1%</span></div>
        <p class="note">· La tirada ×10 garantiza al menos una Épica.<br>
        · A las ${G.Gacha.PITY_5} tiradas sin Legendaria en un banner, la siguiente lo es.<br>
-       · Los repetidos dan Pokémonedas. Los shiny no se repiten.<br>
+       · Los repetidos dan Pokémonedas y una copia de ese Pokémon (hasta 20). Los shiny no se repiten.<br>
        · Los tickets se consiguen jugando: algunos Pokémon los sueltan al caer, y
          los jefes y los legendarios de las grietas, a veces, tickets ×10.</p>`;
 
@@ -91,12 +101,16 @@ G.GachaUI = (() => {
     out.innerHTML = '';
     $('pull-close').classList.add('hidden');
     slot.style.display = '';
+    $('slot-hint').classList.remove('hidden');
     fx.classList.remove('hidden');
 
     // La tragaperras (ui/slots.js) y luego las cartas.
+    phase = 'slot'; skipCards = false;
     await G.Slots.play(slot, res);
+    phase = 'cards'; skipCards = G.Slots.skipped;
     G.Audio.sfx('burst', { rarity: best });
     slot.style.display = 'none';
+    $('slot-hint').classList.add('hidden');
 
     for (const r of res) {
       const mon = G.DEX_BY[r.dex];
@@ -110,9 +124,11 @@ G.GachaUI = (() => {
         : `Repetido · <span class="coin"></span> +${r.refund}` + (r.copy ? `<br><span class="copy-up">Copia ${r.copy}/${G.Upgrades.COPY_MAX}</span>` : '');
       c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
       out.appendChild(c);
+      if (skipCards) continue;                 // saltado: todas a la vez, sin un sonido por carta
       G.Audio.sfx('reveal', { rarity: r.rarity });
       await wait(n === 10 ? 150 : 0);
     }
+    phase = '';
     $('pull-close').classList.remove('hidden');
     busy = false;
   }

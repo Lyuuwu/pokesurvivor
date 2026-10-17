@@ -110,18 +110,22 @@ G.MenuUI = (() => {
     const owned = Object.keys(s.owned).filter(d => G.DEX_BY[d]).length;
     $('dex-total').textContent = `${owned} / ${G.DEX.length}`;
 
-    // Pestañas de generación (0 = todas), con cuántos tienes de cada una.
+    // Pestañas de generación (0 = todas), con cuántos tienes de cada una y el nivel de colección.
+    const regs = G.Upgrades.regions(s);
     const tabs = $('dex-gens');
     tabs.innerHTML = '';
     ['Todas'].concat(GEN_NAMES).forEach((name, g) => {
       const total = G.DEX.filter(p => !g || p.gen === g).length;
       const have = G.DEX.filter(p => (!g || p.gen === g) && s.owned[p.dex]).length;
+      const r = regs[g - 1];
       const b = document.createElement('button');
       b.className = 'gen-tab' + (g === dexGen ? ' on' : '');
-      b.innerHTML = `<b>${name}</b><small>${have}/${total}</small>`;
+      b.innerHTML = `<b>${name}</b><small>${have}/${total}</small>` + (r ? pips(r.tier, '') +
+        (r.sTier ? `<small class="rg-sh">${G.Icons.html('shiny', 10)} ${r.sTier}/10</small>` : '') : '');
       b.onclick = () => { dexGen = g; openDex(); };
       tabs.appendChild(b);
     });
+    $('dex-region').innerHTML = regionPanel(regs, dexGen);
 
     // Filtros que se combinan: si lo tienes (uno) + shiny y rarezas (varios a la vez).
     const fb = $('dex-filters');
@@ -141,6 +145,32 @@ G.MenuUI = (() => {
     }
     renderGrid();
     showDetail(dexSel);
+  }
+
+  // ---------------- colección por regiones (data/upgrades.js: regions) ----------------
+  const pips = (n, cls) => `<span class="pips rg-pips ${cls}">${Array.from({ length: 10 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+  const pct = v => '+' + Math.round(v * 1000) / 10 + '%';
+  function bonusList(b) {
+    const L = [['spd', 'velocidad'], ['atk', 'daño'], ['crit', 'de críticos'], ['def', 'defensa'], ['hp', 'vida']];
+    return L.filter(([k]) => b[k] > 0).map(([k, w]) => `<b class="gold">${pct(b[k])} ${w}</b>`).join(' · ');
+  }
+  /** Panel encima de la lista: la colección de la región elegida (o, en Todas, lo que va para todos). */
+  function regionPanel(regs, g) {
+    const U = G.Upgrades;
+    if (!g) {
+      const all = U.regionBonus(regs, 0);
+      return `<div class="panel region-panel"><b>Colección por regiones</b>
+        <p class="sub"><span>Cada 10% de la colección de una región es un nivel para sus Pokémon (los shiny cuentan el triple). Al 100%, la región da su premio a todos los Pokémon.</span></p>
+        <div>${U.regionLevels(regs, 0) ? '<span>Para todos los Pokémon:</span> ' + bonusList(all) : '<span>Ninguna región al 100% todavía.</span>'}</div></div>`;
+    }
+    const r = regs[g - 1];
+    const row = (label, have, total, tier, cls) => `<div class="rg-row"><span>${label}</span>${pips(tier, cls)}<span>${have}/${total}</span>` +
+      `<span class="rg-next">${tier >= 10 ? '¡Completa!' : `Faltan ${U.regionNeed(have, total, tier)} para el nivel ${tier + 1}`}</span></div>`;
+    return `<div class="panel region-panel"><b>Colección de ${GEN_NAMES[g - 1]}</b>
+      ${row('Normal', r.have, r.total, r.tier, '')}
+      ${row(G.Icons.html('shiny', 12) + ' Shiny', r.sHave, r.sTotal, r.sTier, 'sh')}
+      <p class="sub"><span>Por nivel:</span> ${bonusList(U.REGION_STEP)} <span>(shiny, el triple). Sólo para los Pokémon de esta región; al 100%, para todos.</span></p>
+      <div>${U.regionLevels(regs, g) ? `<span>Pokémon de ${GEN_NAMES[g - 1]}, ahora:</span> ` + bonusList(U.regionBonus(regs, g)) : '<span>Todavía sin premio.</span>'}</div></div>`;
   }
 
   function renderGrid() {
@@ -316,7 +346,7 @@ G.MenuUI = (() => {
 
   // ---------------- cómo empieza la partida (en Pokémon y en Mejoras) ----------------
   // La barra normal es lo del propio Pokémon; la parte dorada, lo que le suman
-  // las mejoras, las copias y jugar con la shiny.
+  // las mejoras, las copias, jugar con la shiny y la colección de las regiones.
   const STAT_ROWS = [
     ['hp',   'Vitalidad',     300,  v => String(Math.round(v))],
     ['atk',  'Fuerza',        2.6,  v => '×' + v.toFixed(2)],
@@ -328,7 +358,8 @@ G.MenuUI = (() => {
   function statsBlock(dex, shiny) {
     const s = G.DB.save, mon = G.DEX_BY[dex];
     const lv = (s.pupg && s.pupg[dex]) || {};          // sólo leer: upgradesOf() crearía una entrada vacía
-    const x = { copies: G.DB.copiesOf(dex), rarity: mon.rarity, shiny: !!shiny && G.Sprites.hasShiny(dex) };
+    const x = { copies: G.DB.copiesOf(dex), rarity: mon.rarity, shiny: !!shiny && G.Sprites.hasShiny(dex),
+                region: G.Upgrades.regionBonus(G.Upgrades.regions(s), mon.gen) };
     const base = G.Upgrades.runStats(mon, lv, x, true), now = G.Upgrades.runStats(mon, lv, x);
     return `<div class="run-stats"><small>Al empezar la partida${x.shiny ? ' (shiny)' : ''}</small>` + STAT_ROWS.map(([k, label, max, fmt]) => {
       const b = Math.min(100, base[k] / max * 100), n = Math.min(100, now[k] / max * 100);

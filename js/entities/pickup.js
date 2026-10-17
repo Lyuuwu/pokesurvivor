@@ -82,7 +82,7 @@ G.Pickups = (() => {
       push(orb('magnet', x - 24, y, 0));
       // Ticket ×10: siempre el legendario de la grieta; un jefe normal, 1 de cada 3 veces.
       // (Hasta el 12-10-2026 el legendario de la grieta daba siempre 2: salían demasiados.)
-      if (Math.random() < (legend ? LEGEND_T10 : BOSS_T10)) push(orb('ticket10', x, y - 20, 1));
+      if (Math.random() < (legend ? LEGEND_T10 : BOSS_T10)) push(orb('ticket10', x, y - 20, 3));
       return;
     }
     push(orb(value >= 20 ? 'xpBig' : 'xp', x, y, value));

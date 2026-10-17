@@ -231,6 +231,17 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   text-shadow: 1px 1px 0 var(--shadow);
 }
 .chip.on { border-color: var(--gold); color: var(--gold); }
+.region-panel { margin: 0 0 8px; padding: 8px 10px; font-size: 13px; }
+.region-panel .sub { margin: 4px 0; font-size: 12px; }
+.rg-row { display: grid; grid-template-columns: 70px auto 64px 1fr; gap: 8px; align-items: center; margin: 3px 0; }
+.rg-next { color: var(--muted); font-size: 12px; }
+.pips.rg-pips { margin: 0; }
+.pips.rg-pips i { width: 9px; height: 6px; }
+.pips.rg-pips.sh i.on { background: #9ae6ff; }
+.gen-tab .pips.rg-pips { justify-content: center; gap: 1px; margin-top: 3px; }
+.gen-tab .pips.rg-pips i { width: 5px; height: 4px; }
+.gen-tab .rg-sh { display: block; color: #9ae6ff; font-size: 10px; }
+@media (max-width: 760px) { .rg-row { grid-template-columns: 60px auto 56px; } .rg-next { grid-column: 1 / -1; } }
 .chip-sep { width: 1px; align-self: stretch; margin: 0 4px; background: rgba(244,248,255,.18); flex: 0 0 1px; }
 
 /* ---------- menú principal ---------- */
@@ -338,6 +349,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   .pcard .stars { font-size: 11px; }
 }
 #pull-fx.hidden { display: none; }
+.slot-hint { margin: 0; color: rgba(244,248,255,.7); font-size: 13px; text-align: center; }
 .ball {
   width: 120px; height: 120px; border-radius: 50%; position: relative;
   background: linear-gradient(180deg, #ff4d4d 0 47%, #1a1a1a 47% 53%, #f4f4f4 53% 100%);

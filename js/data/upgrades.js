@@ -76,27 +76,93 @@ G.Upgrades = (() => {
   const SHINY_ALL = { def: 0.10, crit: 0.10 };
   const shinyOf = (rarity, shiny) => (shiny ? Object.assign({}, SHINY[rarity] || SHINY[1], SHINY_ALL) : { hp: 0, atk: 0, spd: 0, def: 0, crit: 0 });
 
+  /*
+   * REGIONES (los 9 banners del gacha). Cuanto más completa tienes la colección
+   * de una región, más fuertes sus Pokémon: un nivel por cada 10% (10 niveles),
+   * igual en todas las regiones. Hasta el 100% sólo cuenta para los Pokémon de
+   * esa región; al 100%, para todos. Lo normal (tenerlo) y lo shiny (tener su
+   * shiny) van por separado: lo shiny cuesta muchísimo más y da el triple.
+   * Mucha velocidad (lo que más cuenta en este juego) y poca vida (con mucha
+   * vida no hay peligro). Todas las regiones juntas tienen tope (REGION_CAP):
+   * con las 9 al 100% serían +90% de velocidad.
+   * El nivel d se alcanza si tienes * 10 >= total * d (sin decimales).
+   */
+  const REGION_STEP = { spd: 0.010, atk: 0.008, crit: 0.005, def: 0.005, hp: 0.003 };   // por nivel normal
+  const REGION_SHINY_X = 3;                                                            // un nivel shiny = 3 normales
+  const REGION_CAP = { spd: 0.50, atk: 0.50, crit: 0.30, def: 0.30, hp: 0.20 };
+  const REGION_N = 9;
+
+  /** Nivel (0-10) de una colección: el mayor d con have * 10 >= total * d. */
+  function regionTier(have, total) {
+    let d = 0;
+    while (d < 10 && total > 0 && have * 10 >= total * (d + 1)) d++;
+    return d;
+  }
+  /** Cuántos te faltan para el siguiente nivel (0 si ya está al 10). */
+  function regionNeed(have, total, tier) {
+    if (tier >= 10 || total <= 0) return 0;
+    return Math.floor((total * (tier + 1) + 9) / 10) - have;     // el menor c con c * 10 >= total * (tier + 1)
+  }
+
+  /**
+   * Colección de cada región (índice = gen - 1), como en el gacha (Pokémon con sprite):
+   *   { gen, have, total, tier, sHave, sTotal, sTier }   (s: shiny; sólo cuentan los que tienen shiny)
+   */
+  function regions(save) {
+    const out = [];
+    for (let g = 1; g <= REGION_N; g++) out.push({ gen: g, have: 0, total: 0, sHave: 0, sTotal: 0 });
+    const owned = (save && save.owned) || {}, shiny = (save && save.shiny) || {};
+    for (const p of G.DEX) {
+      const m = G.SPRITE_META[p.dex], r = out[p.gen - 1];
+      if (!m || !r) continue;
+      r.total++;
+      if (owned[p.dex]) r.have++;
+      if (m.sh) { r.sTotal++; if (shiny[p.dex]) r.sHave++; }
+    }
+    for (const r of out) { r.tier = regionTier(r.have, r.total); r.sTier = regionTier(r.sHave, r.sTotal); }
+    return out;
+  }
+
+  /** Niveles de región que cuentan para un Pokémon de la región `gen` (0 = ninguna: sólo las completas). */
+  function regionLevels(list, gen) {
+    let n = 0;
+    for (const r of list) {
+      if (r.gen === gen || r.tier === 10) n += r.tier;
+      if (r.gen === gen || r.sTier === 10) n += r.sTier * REGION_SHINY_X;
+    }
+    return n;
+  }
+
+  /** Lo que dan las regiones a un Pokémon de la región `gen`: { spd, atk, crit, def, hp }, con tope. */
+  function regionBonus(list, gen) {
+    const n = regionLevels(list, gen), b = {};
+    for (const k in REGION_STEP) b[k] = Math.min(REGION_CAP[k], REGION_STEP[k] * n);
+    return b;
+  }
+
   /**
    * Niveles comprados -> modificadores para G.Player.
-   * @param x  { copies, rarity, shiny }: copias del gacha, rareza (1-5) y si juegas con la shiny
+   * @param x  { copies, rarity, shiny, region }: copias del gacha, rareza (1-5), si juegas con
+   *           la shiny y lo que dan las regiones (regionBonus)
    */
   function perks(levels = {}, x = {}) {
     // Nunca por encima del máximo (una partida editada a mano no da más poder).
     const L = id => Math.max(0, Math.min(BY[id].max, Math.floor(+levels[id] || 0)));
     const C = copyTotals(x.copies, x.rarity), S = shinyOf(x.rarity, x.shiny);
+    const R = Object.assign({ spd: 0, atk: 0, crit: 0, def: 0, hp: 0 }, x.region);
     return {
       hp: L('hp') * 8,
-      hpMul: 1 + S.hp,                                       // sobre la vida base del Pokémon
-      atkMul: (1 + L('atk') * 0.04 + C.atk) * (1 + S.atk),
-      spdMul: (1 + L('spd') * 0.03 + C.spd) * (1 + S.spd),
+      hpMul: (1 + S.hp) * (1 + R.hp),                        // sobre la vida base del Pokémon
+      atkMul: (1 + L('atk') * 0.04 + C.atk + R.atk) * (1 + S.atk),
+      spdMul: (1 + L('spd') * 0.03 + C.spd + R.spd) * (1 + S.spd),
       cdMul: 1 - L('cd') * 0.03,
-      dmgReduce: L('def') * 0.02 + S.def,
+      dmgReduce: L('def') * 0.02 + S.def + R.def,
       regen: L('regen') * 0.2,
       magnetMul: 1 + L('magnet') * 0.12,
       xpMul: 1 + L('xp') * 0.05,
       coinMul: 1 + L('coins') * 0.08,
       startMoves: 1 + L('moves'),
-      crit: L('crit') * 0.03 + C.crit + S.crit,
+      crit: L('crit') * 0.03 + C.crit + S.crit + R.crit,
       rerolls: L('reroll') + C.reroll,
       bans: L('ban')
     };
@@ -105,7 +171,7 @@ G.Upgrades = (() => {
   /**
    * Cómo empieza la partida un Pokémon (lo que se ve en Pokémon y en Mejoras):
    * vida, daño (multiplicador), velocidad, recarga (menos es mejor), defensa
-   * y críticos. Con `bare`, sólo lo suyo (sin mejoras, copias ni shiny).
+   * y críticos. Con `bare`, sólo lo suyo (sin mejoras, copias, shiny ni regiones).
    */
   function runStats(mon, levels, x = {}, bare = false) {
     const k = bare ? perks({}, {}) : perks(levels, x);
@@ -119,5 +185,6 @@ G.Upgrades = (() => {
     };
   }
 
-  return { LIST, BY, cost, perks, runStats, COPY_MAX, COPY_KIND, COPIES, copyValue, copyTotals, SHINY, SHINY_ALL };
+  return { LIST, BY, cost, perks, runStats, COPY_MAX, COPY_KIND, COPIES, copyValue, copyTotals, SHINY, SHINY_ALL,
+           regions, regionTier, regionNeed, regionLevels, regionBonus, REGION_STEP, REGION_SHINY_X, REGION_CAP };
 })();

@@ -90,7 +90,8 @@ G.Game = (() => {
     const save = G.DB.save;
     const mon = G.DEX_BY[save.partner];
     const shiny = !!save.partnerShiny && G.DB.ownsShiny(mon.dex) && G.Sprites.hasShiny(mon.dex);
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex), { copies: G.DB.copiesOf(mon.dex), rarity: mon.rarity, shiny });
+    const region = G.Upgrades.regionBonus(G.Upgrades.regions(save), mon.gen);
+    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex), { copies: G.DB.copiesOf(mon.dex), rarity: mon.rarity, shiny, region });
 
     G.UI.hideAll();
     G.UI.chrome(false);

@@ -8,7 +8,8 @@
  *   último rodillo se hace esperar y las luces se vuelven locas.
  *   La ×10 son 10 tiradas rápidas; cada premio cae como una bola a la bandeja.
  *
- * Un clic acelera la animación.
+ * Un toque (tap(), en cualquier parte de la pantalla) acelera la animación;
+ * otro, salta al final (los resultados).
  */
 G.Slots = (() => {
   const W = 176, H = 170, CELL = 30;
@@ -21,7 +22,7 @@ G.Slots = (() => {
     led: '#2a0f14', bulbOn: '#ffe9a0', bulbOff: '#6b4a20'
   };
 
-  let cv = null, ctx = null, st = null, raf = 0, last = 0, fast = false;
+  let cv = null, ctx = null, st = null, raf = 0, last = 0, fast = false, skip = false;
 
   const symOf = r => (r.shiny ? 'shiny' : SYM[r.rarity]);
   const colOf = r => (r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
@@ -29,15 +30,14 @@ G.Slots = (() => {
   function wait(s) {
     return new Promise(res => {
       const end = performance.now() + s * 1000 * (fast ? 0.25 : 1);
-      (function chk() { if (performance.now() >= end || !st) res(); else setTimeout(chk, 16); })();
+      (function chk() { if (performance.now() >= end || !st || skip) res(); else setTimeout(chk, 16); })();
     });
   }
 
   /** Anima las tiradas. → Promise que se resuelve al terminar. */
   async function play(canvas, results) {
     cv = canvas; ctx = cv.getContext('2d');
-    fast = false;
-    cv.onclick = () => { fast = true; };
+    fast = false; skip = false;
     st = {
       t: 0, lever: 0, reels: REEL_X.map(() => ({ off: Math.random() * 400, spin: false, sym: 'ball', bounce: 0, speed: 0 })),
       ten: results.length === 10, tray: [], led: results.length === 10 ? 'TIRADA ×10' : '¡SUERTE!', ledCol: C.bulbOn, win: null, frenzy: 0, sparks: []
@@ -48,6 +48,7 @@ G.Slots = (() => {
 
     const ten = results.length === 10;
     for (let i = 0; i < results.length; i++) {
+      if (skip) break;
       const r = results[i];
       if (ten) st.led = 'TIRADA ' + (i + 1) + '/10';
       // Palanca.
@@ -86,15 +87,29 @@ G.Slots = (() => {
     stopAll();
   }
 
-  function stopAll() { cancelAnimationFrame(raf); st = null; if (cv) cv.onclick = null; }
+  /** Toque durante la animación: el primero acelera, el segundo salta a los resultados. */
+  function tap() {
+    if (!st) return;
+    if (!fast) { fast = true; return; }
+    skip = true;
+    // Termina ya lo que esté a medias (sin esperar al siguiente fotograma).
+    for (const end of [...pending]) end();
+  }
 
+  function stopAll() { cancelAnimationFrame(raf); st = null; }
+
+  const pending = new Set();          // tweens a medias (un salto los termina al momento)
   function tween(set, a, b, dur) {
     return new Promise(res => {
       const t0 = performance.now(), d = dur * 1000 * (fast ? 0.25 : 1);
+      const end = () => { if (!pending.delete(end)) return; set(b); res(); };
+      pending.add(end);
       (function step() {
-        const k = Math.min(1, (performance.now() - t0) / d);
+        if (!pending.has(end)) return;
+        const k = skip ? 1 : Math.min(1, (performance.now() - t0) / d);
+        if (k >= 1 || !st) { end(); return; }
         set(a + (b - a) * k);
-        if (k < 1 && st) requestAnimationFrame(step); else res();
+        requestAnimationFrame(step);
       })();
     });
   }
@@ -252,5 +267,5 @@ G.Slots = (() => {
     R(x - 1, REEL_Y, 1, REEL_H, C.dark); R(x + REEL_W, REEL_Y, 1, REEL_H, C.dark);
   }
 
-  return { play, stop: stopAll };
+  return { play, tap, stop: stopAll, get skipped() { return skip; } };
 })();
