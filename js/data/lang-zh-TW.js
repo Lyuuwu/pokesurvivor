@@ -3681,5 +3681,13 @@ G.I18n.add({
   "Pick a Pokémon to upgrade": "選擇要強化的寶可夢",
   "Change Pokémon": "更換寶可夢",
   "The in-run bonuses at the top left now also show cooldown reduction (no % cap; each move still needs at least 0.05 s).": "遊戲中左上角的加成也會顯示冷卻減少（沒有 % 上限；每個招式最短仍需 0.05 秒）。",
-  "Upgrades: the drop-down is gone. “Change Pokémon” opens the Pokémon screen with only the ones you have (regions, shiny and rarity filters included, plus how many upgrade levels each has); tap one to see its upgrades.": "強化：拿掉了下拉選單。「更換寶可夢」會打開寶可夢頁，只顯示你擁有的（可選地區、閃光和稀有度，並標出每隻已強化幾級），點一隻就會顯示牠的強化。"
+  "Upgrades: the drop-down is gone. “Change Pokémon” opens the Pokémon screen with only the ones you have (regions, shiny and rarity filters included, plus how many upgrade levels each has); tap one to see its upgrades.": "強化：拿掉了下拉選單。「更換寶可夢」會打開寶可夢頁，只顯示你擁有的（可選地區、閃光和稀有度，並標出每隻已強化幾級），點一隻就會顯示牠的強化。",
+  "Critical {x}% (max 100%)": "暴擊 {x}%（上限 100%）",
+  "Experience {x}%": "經驗 {x}%",
+  "Aim: mouse (R)": "鼠標瞄準 (R)",
+  "Aim: auto-lock (R)": "自動鎖定 (R)",
+  "Auto-lock aim: nearest enemy or the boss": "自動鎖定模式：攻擊最近的敵人或頭目",
+  "Mouse aim": "鼠標瞄準模式",
+  "The in-run bonuses at the top left now also show critical chance (max 100%) and experience bonus.": "遊戲中左上角的加成也會顯示暴擊率（上限 100%）和經驗加成。",
+  "Keyboard and mouse: press R to switch between mouse aim and auto-lock (the original mode: attacks go to the nearest enemy or the boss). The current mode shows at the top left and is remembered on this device.": "鍵盤滑鼠：按 R 切換鼠標瞄準和自動鎖定（原本的模式：自動攻擊最近的敵人或頭目）。目前的模式顯示在左上角，並會記在這台裝置上。"
 }, "zh-TW");

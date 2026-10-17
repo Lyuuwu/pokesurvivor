@@ -32,7 +32,8 @@ G.HUD = (() => {
    *   daño (todos los ataques), daño que te quitan (la defensa ya convertida en
    *   reducción, con su tope; con un ataque cuerpo a cuerpo activo, un 25 %
    *   menos aún), velocidad (sin contar agua, clima ni frenazos) y recarga
-   *   (sin tope en %: cada movimiento tarda como mínimo 0,05 s, combat.js).
+   *   (sin tope en %: cada movimiento tarda como mínimo 0,05 s, combat.js);
+   * debajo, críticos (tope 100 %), experiencia y el modo de apuntar.
    */
   const REDUCE_MAX = 0.8;            // = tope de G.Player#reduction
   function statsRow(ctx, pl, x, y) {
@@ -43,21 +44,33 @@ G.HUD = (() => {
     const max = 1 - (1 - REDUCE_MAX) * (melee ? 0.75 : 1);
     const spd = pl.spdMul * (1 + pl.buffs.spd.n * pl.buffs.spd.amount) - 1;
     const cd = 1 - pl.cdMul;
-    const items = [
+    const crit = Math.min(1, pl.critChance);            // por encima del 100 % ya no hace nada
+    const xp = pl.xpMul - 1;
+    const rows = [[
       ['Daño ' + (dmg >= 0 ? '+' : '') + pc(dmg) + '%', '#ff8a6b'],
       ['Reducción ' + pc(red) + '% (máx. ' + pc(max) + '%)', red >= max - 0.001 ? '#ffcb3d' : '#c9d2e6'],
       ['Velocidad ' + (spd >= 0 ? '+' : '') + pc(spd) + '%', '#7fe0ff'],
       ['Recarga ' + (pc(cd) > 0 ? '-' : '') + pc(cd) + '%', '#ffd96b']
-    ];
+    ], [
+      ['Críticos ' + pc(crit) + '% (máx. 100%)', crit >= 1 ? '#ffcb3d' : '#ffb3e6'],
+      ['Experiencia ' + (xp >= 0 ? '+' : '') + pc(xp) + '%', '#a98bff']
+    ]];
+    // Teclado y ratón: cómo apuntas (R cambia). En táctil siempre es automático.
+    if (!G.Touch.active) rows[1].push([(pl.mouseAim ? 'Apuntado: ratón' : 'Apuntado: automático') + ' (R)', '#eaf2ff']);
     ctx.font = F(800, 9);
     ctx.textAlign = 'left';
-    for (const [txt, col] of items) {
-      const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, x, y, tw, 15, 7);
-      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
-      ctx.fillStyle = col;
-      ctx.fillText(txt, x + 6, y + 11);
-      x += tw + 5;
+    const x0 = x;
+    for (const items of rows) {
+      x = x0;
+      for (const [txt, col] of items) {
+        const tw = ctx.measureText(txt).width + 12;
+        roundRect(ctx, x, y, tw, 15, 7);
+        ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
+        ctx.fillStyle = col;
+        ctx.fillText(txt, x + 6, y + 11);
+        x += tw + 5;
+      }
+      y += 18;
     }
   }
 
@@ -97,7 +110,7 @@ G.HUD = (() => {
     statsRow(ctx, pl, px, py + 34);
 
     // buffs activos (debajo de la fila de arriba)
-    const by = py + 52;
+    const by = py + 70;
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
     const LBL = { atk: 'ATK', spd: 'VEL', def: 'DEF', regen: 'REG' };
     let bx = px;
@@ -185,7 +198,7 @@ G.HUD = (() => {
       bx += tw + 5;
     }
 
-    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 74 : 58));
+    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 92 : 76));
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.

@@ -14,6 +14,8 @@ G.CHANGELOG = [
     'In a run, the top left now shows your current bonuses: total damage, damage reduction (defense turned into the % of damage you avoid, with its cap: 80%, or 85% while a melee move is active) and speed. They include upgrades, copies, shiny, regions, level-up cards, items, altar powers and active support moves.',
     'The in-run bonuses at the top left now also show cooldown reduction (no % cap; each move still needs at least 0.05 s).',
     'Upgrades: the drop-down is gone. “Change Pokémon” opens the Pokémon screen with only the ones you have (regions, shiny and rarity filters included, plus how many upgrade levels each has); tap one to see its upgrades.',
+    'The in-run bonuses at the top left now also show critical chance (max 100%) and experience bonus.',
+    'Keyboard and mouse: press R to switch between mouse aim and auto-lock (the original mode: attacks go to the nearest enemy or the boss). The current mode shows at the top left and is remembered on this device.',
     'Gacha: tap once to speed up the slot machine, tap again to jump straight to the results.',
     'Duplicates of legendaries (★5) give more per copy: +6% damage, +2 rerolls, +5% critical chance or +5% speed (all 20: +24% damage, +12 rerolls, +30% critical chance, +20% speed).',
     'Shiny boost: playing with a shiny makes it stronger in everything. HP, damage and speed go up depending on rarity, so a common Pokémon’s shiny is about as strong as a base legendary (Common: +25% HP, +35% damage, +20% speed · Uncommon: +20% / +25% / +16% · Rare: +15% / +15% / +12% · Epic: +12% / +10% / +10% · Legendary: +10% / +10% / +8%), and every shiny gets +10% defense and +10% critical chance.',

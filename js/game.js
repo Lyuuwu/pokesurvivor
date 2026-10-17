@@ -558,6 +558,13 @@ G.Game = (() => {
       if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
     }
     if (G.Input.tap('keyq')) pl.cycle(-1);
+    // R: apuntar con el ratón <-> fijar solo al enemigo más cercano o al jefe (el modo de antes).
+    if (G.Input.tap('keyr') && !G.Touch.active) {
+      const auto = G.Settings.get('aim') !== 'auto';
+      G.Settings.set('aim', auto ? 'auto' : 'mouse');
+      G.Spawner.say(auto ? 'Apuntado automático: al enemigo más cercano o al jefe' : 'Apuntado con el ratón', 2.2, true);
+      G.Audio.sfx('select');
+    }
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
 

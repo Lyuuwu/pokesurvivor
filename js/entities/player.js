@@ -374,7 +374,8 @@ G.Player = class Player {
   /** Después de mover la cámara: el ratón usa la misma vista que se dibuja. */
   updateAim() {
     if (this.dead || this.frozen) return;
-    this.mouseAim = !G.Touch.active || G.Input.mouse().active;
+    // Ratón (si no lo has cambiado con R a automático); en táctil, siempre automático.
+    this.mouseAim = (!G.Touch.active || G.Input.mouse().active) && G.Settings.get('aim') !== 'auto';
     // Se conserva el blanco automático para cadenas, meteoros y controles táctiles.
     // Prioridad de blanco según el ataque activo:
     //   a distancia (proyectil, rayo): el jefe si está a tiro > lo que te toca > el más cercano
