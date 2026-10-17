@@ -3672,5 +3672,9 @@ G.I18n.add({
   "· Duplicates give PokéCoins and a copy of that Pokémon (up to 20). Shinies never repeat.": "· 重複的寶可夢會給寶可幣，並增加一次重複獲得（最多 20）；閃光寶可夢不會重複。",
   "Tap to speed up · again to see the result": "點一下加速 · 再點一下直接看結果",
   "Regions matter: every 10% of a region’s collection (the gacha banners) is a level that makes that region’s Pokémon stronger: +1% speed, +0.8% damage, +0.5% critical chance, +0.5% defense and +0.3% HP per level. The shiny collection counts separately and gives triple. At 100%, a region gives its bonus to every Pokémon. All regions together cap at +50% speed and damage, +30% critical chance and defense, and +20% HP. See it in Pokémon and on each gacha banner.": "地區有存在感了：一個地區（扭蛋的各個卡池）每收集 10% 就升一級，讓該地區的寶可夢變強：每級速度 +1%、傷害 +0.8%、擊中要害機率 +0.5%、防禦 +0.5%、生命 +0.3%。閃光收集另外計算，加成是三倍。地區收集達到 100% 時，加成給所有寶可夢。所有地區合計上限：速度和傷害 +50%、擊中要害機率和防禦 +30%、生命 +20%。可在寶可夢頁和各個扭蛋卡池查看。",
-  "Gacha: tap once to speed up the slot machine, tap again to jump straight to the results.": "扭蛋：點一下讓拉霸加速，再點一下直接跳到結果。"
+  "Gacha: tap once to speed up the slot machine, tap again to jump straight to the results.": "扭蛋：點一下讓拉霸加速，再點一下直接跳到結果。",
+  "Damage {x}%": "傷害 {x}%",
+  "Damage reduction {x}% (max {x}%)": "減傷 {x}%（上限 {x}%）",
+  "Speed {x}%": "速度 {x}%",
+  "In a run, the top left now shows your current bonuses: total damage, damage reduction (defense turned into the % of damage you avoid, with its cap: 80%, or 85% while a melee move is active) and speed. They include upgrades, copies, shiny, regions, level-up cards, items, altar powers and active support moves.": "遊戲中左上角會顯示目前的加成：總傷害、減傷（防禦換算成少受多少 % 傷害，並標出上限：80%，使用近戰招式時 85%）和速度。已經算進強化、重複獲得、閃光、地區、升級卡片、道具、祭壇力量和正在生效的輔助招式。"
 }, "zh-TW");

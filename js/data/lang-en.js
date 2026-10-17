@@ -408,6 +408,10 @@ G.I18n.add({
   'Shiny: nivel {x}/10': 'Shiny: level {x}/10',
   '· Los repetidos dan Pokémonedas y una copia de ese Pokémon (hasta 20). Los shiny no se repiten.': '· Duplicates give PokéCoins and a copy of that Pokémon (up to 20). Shinies never repeat.',
   'Toca para ir más rápido · otra vez para ver el resultado': 'Tap to speed up · again to see the result',
+  // ---------------- HUD: bonificaciones actuales ----------------
+  'Daño {x}%': 'Damage {x}%',
+  'Reducción {x}% (máx. {x}%)': 'Damage reduction {x}% (max {x}%)',
+  'Velocidad {x}%': 'Speed {x}%',
   'Eres el anfitrión. Invita a tus amigos (hasta {x}) y empezad cuando estéis.': 'You\'re the host. Invite your friends (up to {x}) and start when you\'re ready.',
   'Estás en la sala de {x}. El anfitrión empezará la partida.': 'You\'re in {x}\'s room. The host will start the game.',
   'Cuando el anfitrión empiece, entraréis todos a la vez.': 'When the host starts, you\'ll all join at the same time.', 'La partida empieza para todos a la vez.': 'The game starts for everyone at once.',

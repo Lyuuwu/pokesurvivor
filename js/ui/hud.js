@@ -25,6 +25,39 @@ G.HUD = (() => {
     }
   }
 
+  /*
+   * Fila de arriba a la izquierda: cuánto llevas sumado AHORA respecto a tu
+   * Pokémon tal cual (con mejoras, copias, shiny, regiones, cartas de nivel,
+   * objetos, poderes de altar y movimientos de apoyo activos):
+   *   daño (todos los ataques), daño que te quitan (la defensa ya convertida en
+   *   reducción, con su tope; con un ataque cuerpo a cuerpo activo, un 25 %
+   *   menos aún) y velocidad (sin contar agua, clima ni frenazos).
+   */
+  const REDUCE_MAX = 0.8;            // = tope de G.Player#reduction
+  function statsRow(ctx, pl, x, y) {
+    const pc = v => Math.round(v * 100);
+    const dmg = pl.atk / pl.baseAtk - 1;
+    const melee = pl.activeGroup().some(m => m.kind === 'melee');
+    const red = 1 - (1 - pl.reduction) * (melee ? 0.75 : 1);
+    const max = 1 - (1 - REDUCE_MAX) * (melee ? 0.75 : 1);
+    const spd = pl.spdMul * (1 + pl.buffs.spd.n * pl.buffs.spd.amount) - 1;
+    const items = [
+      ['Daño ' + (dmg >= 0 ? '+' : '') + pc(dmg) + '%', '#ff8a6b'],
+      ['Reducción ' + pc(red) + '% (máx. ' + pc(max) + '%)', red >= max - 0.001 ? '#ffcb3d' : '#c9d2e6'],
+      ['Velocidad ' + (spd >= 0 ? '+' : '') + pc(spd) + '%', '#7fe0ff']
+    ];
+    ctx.font = F(800, 9);
+    ctx.textAlign = 'left';
+    for (const [txt, col] of items) {
+      const tw = ctx.measureText(txt).width + 12;
+      roundRect(ctx, x, y, tw, 15, 7);
+      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
+      ctx.fillStyle = col;
+      ctx.fillText(txt, x + 6, y + 11);
+      x += tw + 5;
+    }
+  }
+
   function draw(ctx, w, h, pl, st) {
     ctx.save();
     ctx.textBaseline = 'alphabetic';
@@ -57,7 +90,11 @@ G.HUD = (() => {
     ctx.textAlign = 'center';
     ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
 
-    // buffs activos
+    // Lo que llevas sumado ahora (mejoras, cartas de nivel, objetos, apoyos activos...).
+    statsRow(ctx, pl, px, py + 34);
+
+    // buffs activos (debajo de la fila de arriba)
+    const by = py + 52;
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
     const LBL = { atk: 'ATK', spd: 'VEL', def: 'DEF', regen: 'REG' };
     let bx = px;
@@ -68,10 +105,10 @@ G.HUD = (() => {
       ctx.font = F(800, 9);
       const txt = LBL[k] + ' ×' + b.n;
       const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      roundRect(ctx, bx, by, tw, 15, 7);
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
       ctx.fillStyle = COL[k];
-      ctx.fillText(txt, bx + 6, py + 45);
+      ctx.fillText(txt, bx + 6, by + 11);
       bx += tw + 5;
     }
 
@@ -138,14 +175,14 @@ G.HUD = (() => {
       ctx.font = F(800, 9);
       ctx.textAlign = 'left';
       const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      roundRect(ctx, bx, by, tw, 15, 7);
       ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fill();
       ctx.fillStyle = pw.def.color;
-      ctx.fillText(txt, bx + 6, py + 45);
+      ctx.fillText(txt, bx + 6, by + 11);
       bx += tw + 5;
     }
 
-    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));
+    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 74 : 58));
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.
