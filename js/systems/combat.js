@@ -301,7 +301,7 @@ G.Combat = (() => {
     const sx = pl.x, sy = pl.y;
     let len = 0;
     for (let d = 8; d <= m.radius; d += 8) {
-      if (!G.World.isFree(sx + ca * d, sy + sa * d, pl.r * 0.8, true)) break;
+      if (!G.World.isFree(sx + ca * d, sy + sa * d, Math.min(pl.r * 0.8, G.World.FEET), true)) break;
       len = d;
     }
     // Estela: varias copias del golpe a lo largo del recorrido.

@@ -11,6 +11,9 @@ G.CHANGELOG = [
      'Co-op: in the room every guest presses “I’m ready”, and the host can only start once everyone is. Going back to the menu clears it, and after a run you press it again.'],
     ['En Ajustes > Cuenta puedes exportar tu partida a un archivo e importarla en otra web o aparato. Al importar se junta con tu partida: los Pokémon se suman, las monedas y los tickets no se duplican y un archivo viejo nunca quita nada.',
      'In Settings > Account you can export your save to a file and import it on another site or device. Importing merges it with your game: Pokémon are combined, coins and tickets are not duplicated, and an old file never takes anything away.']
+  ], fix: [
+    ['Ya no te quedas atascado entre árboles, rocas y paredes que se ven separados: contra el escenario sólo chocan los pies de tu Pokémon y el tronco de los árboles, no todo el cuerpo ni la copa. Los enemigos también rodean mejor los bosques.',
+     'You no longer get stuck between trees, rocks and walls that look far enough apart: only your Pokémon’s feet and the tree trunks collide with the scenery, not the whole body or the treetop. Enemies also get around forests more easily.']
   ] },
   { d: '2026-10-16', title: ['Apuntado con ratón', 'Mouse aiming'], chg: [
     ['Con teclado y ratón, el Pokémon mira al cursor y los ataques direccionales se lanzan hacia él, incluso sin enemigos cerca. El movimiento sigue en el teclado; en móvil se mantiene el apuntado automático.',

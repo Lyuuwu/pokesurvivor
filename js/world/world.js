@@ -32,6 +32,7 @@ G.World = (() => {
   const TS = T * G.Sprites.PX;             // tamaño de tile en mundo (32)
   const CW = N * TS;                       // tamaño de chunk en mundo (512)
   const FLOOR = 0, WALL = 1, LIQUID = 2;
+  const FEET = 10;                         // radio máximo de los pies contra el escenario (collide)
   const KIND = ['floor', 'wall', 'liquid'];
 
   let seed = 1, biome = 0;
@@ -167,7 +168,7 @@ G.World = (() => {
   }
 
   const PROP = {
-    tree:  { solid: true,  hp: Infinity, r: 13 },
+    tree:  { solid: true,  hp: Infinity, r: 8, shadow: 13 },     // choca el tronco; la sombra, la copa
     rock:  { solid: true,  hp: 34,       r: 12 },
     chest: { solid: true,  hp: 22,       r: 12 },
     grass: { solid: false, hp: 1,        r: 14 },
@@ -183,7 +184,7 @@ G.World = (() => {
     return {
       id: nextPropId++, type, tx, ty, kind,
       x: tx * TS + TS / 2, y: ty * TS + TS - 4,
-      r: d.r, hp: d.hp, maxHp: d.hp, solid: d.solid, flat: !!d.flat,
+      r: d.r, sr: d.shadow || d.r, hp: d.hp, maxHp: d.hp, solid: d.solid, flat: !!d.flat,
       destructible: d.hp !== Infinity, flash: 0,
       wiggle: H(tx, ty, 9) * 6.28,
       used: false, charge: 1, open: 0          // altar / manantial / cofre con candado
@@ -287,9 +288,12 @@ G.World = (() => {
   /**
    * Empuja un círculo fuera de paredes y objetos sólidos (deslizando).
    * Devuelve true si ha chocado con algo.
+   * Contra el escenario cuenta sólo el sitio que ocupan los pies (como mucho
+   * FEET de radio), no todo el cuerpo: si no, entre dos árboles o rocas que se
+   * ven separados no cabía nadie. Los golpes siguen usando e.r.
    */
   function collide(e) {
-    const r = e.r;
+    const r = Math.min(e.r, FEET);
     let hit = false;
     for (let pass = 0; pass < 2; pass++) {
       const t0x = tileOf(e.x - r), t1x = tileOf(e.x + r), t0y = tileOf(e.y - r), t1y = tileOf(e.y + r);
@@ -325,7 +329,28 @@ G.World = (() => {
         }
       }
     }
+    // Entre dos cosas más juntas que sus pies (dos árboles pegados), los empujones
+    // a cada lado se anulan y se acababa colando: vuelve a donde estaba libre.
+    if (hit && overlaps(e.x, e.y, r - 0.5)) {
+      if (e.freeX !== undefined && G.U.dist2(e.x, e.y, e.freeX, e.freeY) < 24 * 24) { e.x = e.freeX; e.y = e.freeY; }
+      return true;
+    }
+    e.freeX = e.x; e.freeY = e.y;
     return hit;
+  }
+
+  /** ¿Se mete un círculo en alguna pared u objeto sólido? (exacto, sin empujar) */
+  function overlaps(x, y, r) {
+    const t0x = tileOf(x - r), t1x = tileOf(x + r), t0y = tileOf(y - r), t1y = tileOf(y + r);
+    for (let ty = t0y; ty <= t1y; ty++) for (let tx = t0x; tx <= t1x; tx++) {
+      if (terrainAt(tx, ty) === WALL) {
+        const dx = G.U.clamp(x, tx * TS, tx * TS + TS) - x, dy = G.U.clamp(y, ty * TS, ty * TS + TS) - y;
+        if (dx * dx + dy * dy < r * r) return true;
+      }
+      const p = propAtTile(tx, ty);
+      if (p && p.solid && G.U.dist2(x, y, p.x, p.y) < (r + p.r) ** 2) return true;
+    }
+    return false;
   }
 
   /** ¿Choca un proyectil aquí? Devuelve 'wall', el prop sólido, o null. */
@@ -525,7 +550,7 @@ G.World = (() => {
     }
     if (p.type !== 'grass') {
       ctx.fillStyle = 'rgba(0,0,0,.3)';
-      ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * 1.1, p.r * 0.38, 0, 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, p.sr * 1.1, p.sr * 0.38, 0, 0, 6.2832); ctx.fill();
     }
     ctx.save();
     const x = Math.round(p.x - w / 2), y = Math.round(p.y - h + (p.type === 'grass' ? 4 : 2));
@@ -586,7 +611,7 @@ G.World = (() => {
   }
 
   return {
-    TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
+    TS, CW, FEET, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
