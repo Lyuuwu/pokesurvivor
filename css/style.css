@@ -242,6 +242,10 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .gen-tab .pips.rg-pips i { width: 5px; height: 4px; }
 .gen-tab .rg-sh { display: block; color: #9ae6ff; font-size: 10px; }
 @media (max-width: 760px) { .rg-row { grid-template-columns: 60px auto 56px; } .rg-next { grid-column: 1 / -1; } }
+/* Pokémon, eligiendo a quién mejorar: sin ficha, la lista a todo lo ancho. */
+#scr-dex.picking #dex-detail { display: none; }
+#scr-dex.picking .split { grid-template-columns: 1fr !important; }
+.cell .upg-lv { position: absolute; left: 4px; bottom: 4px; font-size: 11px; font-weight: 800; color: var(--gold); }
 .chip-sep { width: 1px; align-self: stretch; margin: 0 4px; background: rgba(244,248,255,.18); flex: 0 0 1px; }
 
 /* ---------- menú principal ---------- */

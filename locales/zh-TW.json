@@ -3675,5 +3675,10 @@
   "Damage {x}%": "傷害 {x}%",
   "Damage reduction {x}% (max {x}%)": "減傷 {x}%（上限 {x}%）",
   "Speed {x}%": "速度 {x}%",
-  "In a run, the top left now shows your current bonuses: total damage, damage reduction (defense turned into the % of damage you avoid, with its cap: 80%, or 85% while a melee move is active) and speed. They include upgrades, copies, shiny, regions, level-up cards, items, altar powers and active support moves.": "遊戲中左上角會顯示目前的加成：總傷害、減傷（防禦換算成少受多少 % 傷害，並標出上限：80%，使用近戰招式時 85%）和速度。已經算進強化、重複獲得、閃光、地區、升級卡片、道具、祭壇力量和正在生效的輔助招式。"
+  "In a run, the top left now shows your current bonuses: total damage, damage reduction (defense turned into the % of damage you avoid, with its cap: 80%, or 85% while a melee move is active) and speed. They include upgrades, copies, shiny, regions, level-up cards, items, altar powers and active support moves.": "遊戲中左上角會顯示目前的加成：總傷害、減傷（防禦換算成少受多少 % 傷害，並標出上限：80%，使用近戰招式時 85%）和速度。已經算進強化、重複獲得、閃光、地區、升級卡片、道具、祭壇力量和正在生效的輔助招式。",
+  "Cooldown {x}%": "冷卻 {x}%",
+  "Pick a Pokémon to upgrade": "選擇要強化的寶可夢",
+  "Change Pokémon": "更換寶可夢",
+  "The in-run bonuses at the top left now also show cooldown reduction (no % cap; each move still needs at least 0.05 s).": "遊戲中左上角的加成也會顯示冷卻減少（沒有 % 上限；每個招式最短仍需 0.05 秒）。",
+  "Upgrades: the drop-down is gone. “Change Pokémon” opens the Pokémon screen with only the ones you have (regions, shiny and rarity filters included, plus how many upgrade levels each has); tap one to see its upgrades.": "強化：拿掉了下拉選單。「更換寶可夢」會打開寶可夢頁，只顯示你擁有的（可選地區、閃光和稀有度，並標出每隻已強化幾級），點一隻就會顯示牠的強化。"
 }

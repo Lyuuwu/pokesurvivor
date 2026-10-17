@@ -3,6 +3,7 @@ G.MenuUI = (() => {
   const $ = G.UI.$;
   const GEN_NAMES = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Teselia', 'Kalos', 'Alola', 'Galar', 'Paldea'];
   let dexFilter = 'all', dexGen = 1, dexSel = null;     // dexGen 0 = todas las regiones
+  let dexPick = false;                                   // eligiendo a quién mejorar (desde Mejoras)
   let dexShiny = false;
   const dexRarity = new Set();                           // vacío = todas las rarezas
 
@@ -14,7 +15,7 @@ G.MenuUI = (() => {
       b.onclick = () => {
         const go = b.dataset.go;
         if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
-        else if (go === 'dex') openDex();
+        else if (go === 'dex') openDex(false);
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'gacha') G.GachaUI.open();
         else if (go === 'goals') G.GoalsUI.open();
@@ -24,6 +25,9 @@ G.MenuUI = (() => {
       };
     });
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });
+    // Eligiendo a quién mejorar, «Volver» vuelve a Mejoras (con el que estaba).
+    $('scr-dex').querySelector('[data-back]').onclick = () => (dexPick ? openUpgrades(upgDex) : open());
+    $('upg-pick').onclick = () => openDex(true);
     G.Social.on(() => { if (G.UI.isOpen('scr-menu')) socialLine(); });
     $('btn-logout').onclick = () => {
       if (G.DB.guest && !confirm('Eres invitado: se perderá todo el progreso. ¿Salir?')) return;
@@ -103,10 +107,21 @@ G.MenuUI = (() => {
 
   // ---------------- colección ----------------
 
-  function openDex() {
+  /**
+   * @param pick  true: elegir qué Pokémon mejorar (desde Mejoras): sólo los que
+   *              tienes, sin ficha, y al tocar uno se abren sus mejoras.
+   *              false: la colección normal. Sin nada: como estaba (al filtrar).
+   */
+  function openDex(pick) {
+    if (dexSel == null) { dexSel = G.DB.save.partner; dexGen = G.DEX_BY[dexSel].gen; }
+    if (pick !== undefined) {
+      if (pick && !dexPick) dexGen = 0;                 // empieza en Todas: sólo salen los tuyos
+      dexPick = !!pick;
+    }
     G.UI.show('scr-dex', true);
+    $('scr-dex').classList.toggle('picking', dexPick);
+    $('dex-title').textContent = dexPick ? 'Elige qué Pokémon mejorar' : 'Pokémon';
     const s = G.DB.save;
-    if (dexSel == null) { dexSel = s.partner; dexGen = G.DEX_BY[s.partner].gen; }
     const owned = Object.keys(s.owned).filter(d => G.DEX_BY[d]).length;
     $('dex-total').textContent = `${owned} / ${G.DEX.length}`;
 
@@ -137,14 +152,16 @@ G.MenuUI = (() => {
       c.onclick = () => { click(); openDex(); };
       fb.appendChild(c);
     };
-    for (const [k, label] of [['all', 'Todos'], ['own', 'Tengo'], ['miss', 'Me faltan']]) chip(label, dexFilter === k, () => { dexFilter = k; });
-    fb.insertAdjacentHTML('beforeend', '<span class="chip-sep"></span>');
+    if (!dexPick) {                                     // eligiendo a quién mejorar sólo salen los tuyos
+      for (const [k, label] of [['all', 'Todos'], ['own', 'Tengo'], ['miss', 'Me faltan']]) chip(label, dexFilter === k, () => { dexFilter = k; });
+      fb.insertAdjacentHTML('beforeend', '<span class="chip-sep"></span>');
+    }
     chip(G.Icons.html('shiny', 12) + ' Shiny', dexShiny, () => { dexShiny = !dexShiny; });
     for (const r of [5, 4, 3, 2, 1]) {
       chip(G.Icons.rarity(r, 12) + ' ' + G.Gacha.RARITY_NAME[r], dexRarity.has(r), () => { if (!dexRarity.delete(r)) dexRarity.add(r); });
     }
     renderGrid();
-    showDetail(dexSel);
+    if (!dexPick) showDetail(dexSel);
   }
 
   // ---------------- colección por regiones (data/upgrades.js: regions) ----------------
@@ -180,19 +197,27 @@ G.MenuUI = (() => {
     for (const p of G.DEX) {
       if (dexGen && p.gen !== dexGen) continue;
       const own = !!s.owned[p.dex], sh = !!(s.shiny && s.shiny[p.dex]);
-      if (dexFilter === 'own' && !own) continue;
-      if (dexFilter === 'miss' && own) continue;
+      if ((dexPick || dexFilter === 'own') && !own) continue;
+      if (!dexPick && dexFilter === 'miss' && own) continue;
       if (dexShiny && !sh) continue;
       if (dexRarity.size && !dexRarity.has(p.rarity)) continue;
 
       const cell = document.createElement('div');
-      cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === dexSel ? ' on' : '');
+      cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === (dexPick ? upgDex : dexSel) ? ' on' : '');
       cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
       if (p.dex === s.partner) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Compañero">${G.Icons.html('crown', 14)}</span>`);
       else if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
       const useShiny = sh && p.dex === s.partner && s.partnerShiny;
       cell.appendChild(G.UI.spriteCanvas(p.dex, 92, 80, { scale: 2, silhouette: !own, shadow: own, shiny: useShiny }));
       cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b>${G.UI.stars(p.rarity, 9)}`);
+      if (dexPick) {
+        // Cuántos niveles de mejora lleva (para ver de un vistazo a quién has mejorado).
+        const lv = Object.values((s.pupg && s.pupg[p.dex]) || {}).reduce((a, b) => a + b, 0);
+        if (lv) cell.insertAdjacentHTML('beforeend', `<span class="upg-lv">+${lv}</span>`);
+        cell.onclick = () => { G.Audio.sfx('select'); openUpgrades(p.dex); };
+        grid.appendChild(cell);
+        continue;
+      }
       cell.onclick = () => {
         dexSel = p.dex;
         grid.querySelectorAll('.cell').forEach(c => c.classList.remove('on'));
@@ -262,19 +287,15 @@ G.MenuUI = (() => {
 
   let upgDex = null;
 
-  function openUpgrades() {
-    G.UI.show('scr-upgrades', true);
+  /**
+   * @param dex  a quién mejorar (lo elegido en «Cambiar de Pokémon»). Desde el
+   *             menú, siempre el compañero que llevas.
+   */
+  function openUpgrades(dex) {
     const s = G.DB.save;
-    // Siempre empieza en el compañero que llevas (antes se quedaba en el último que miraste).
-    upgDex = s.partner;
-    // Selector con tus Pokémon: el compañero primero, luego los que ya tienen mejoras.
-    const sel = $('upg-mon');
-    const lv = d => Object.values(s.pupg[d] || {}).reduce((a, b) => a + b, 0);
-    const mons = Object.keys(s.owned).map(Number).filter(d => G.DEX_BY[d])
-      .sort((a, b) => (b === s.partner) - (a === s.partner) || lv(b) - lv(a) || a - b);
-    sel.innerHTML = mons.map(d => `<option value="${d}">${G.DEX_BY[d].name}${d === s.partner ? ' (compañero)' : ''}${lv(d) ? ' · ' + lv(d) + ' niveles' : ''}</option>`).join('');
-    sel.value = upgDex;
-    sel.onchange = () => { upgDex = +sel.value; G.Audio.sfx('select'); renderUpgrades(); };
+    dexPick = false;
+    upgDex = dex && s.owned[dex] ? +dex : s.partner;
+    G.UI.show('scr-upgrades', true);
     renderUpgrades();
   }
 
@@ -286,6 +307,7 @@ G.MenuUI = (() => {
     G.UI.sprite($('upg-stage'), upgDex, { lively: true, scale: 2, hero: true, shiny });
     $('upg-stage').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('upg-stats').innerHTML = statsBlock(upgDex, shiny);
+    $('upg-name').innerHTML = mon.name + (upgDex === s.partner ? ' <span class="sub">(compañero)</span>' : '');
     const box = $('upg-list');
     box.innerHTML = '';
     for (const u of G.Upgrades.LIST) {

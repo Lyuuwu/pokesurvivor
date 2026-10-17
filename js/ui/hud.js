@@ -31,7 +31,8 @@ G.HUD = (() => {
    * objetos, poderes de altar y movimientos de apoyo activos):
    *   daño (todos los ataques), daño que te quitan (la defensa ya convertida en
    *   reducción, con su tope; con un ataque cuerpo a cuerpo activo, un 25 %
-   *   menos aún) y velocidad (sin contar agua, clima ni frenazos).
+   *   menos aún), velocidad (sin contar agua, clima ni frenazos) y recarga
+   *   (sin tope en %: cada movimiento tarda como mínimo 0,05 s, combat.js).
    */
   const REDUCE_MAX = 0.8;            // = tope de G.Player#reduction
   function statsRow(ctx, pl, x, y) {
@@ -41,10 +42,12 @@ G.HUD = (() => {
     const red = 1 - (1 - pl.reduction) * (melee ? 0.75 : 1);
     const max = 1 - (1 - REDUCE_MAX) * (melee ? 0.75 : 1);
     const spd = pl.spdMul * (1 + pl.buffs.spd.n * pl.buffs.spd.amount) - 1;
+    const cd = 1 - pl.cdMul;
     const items = [
       ['Daño ' + (dmg >= 0 ? '+' : '') + pc(dmg) + '%', '#ff8a6b'],
       ['Reducción ' + pc(red) + '% (máx. ' + pc(max) + '%)', red >= max - 0.001 ? '#ffcb3d' : '#c9d2e6'],
-      ['Velocidad ' + (spd >= 0 ? '+' : '') + pc(spd) + '%', '#7fe0ff']
+      ['Velocidad ' + (spd >= 0 ? '+' : '') + pc(spd) + '%', '#7fe0ff'],
+      ['Recarga ' + (pc(cd) > 0 ? '-' : '') + pc(cd) + '%', '#ffd96b']
     ];
     ctx.font = F(800, 9);
     ctx.textAlign = 'left';

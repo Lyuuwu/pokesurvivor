@@ -457,7 +457,7 @@
 <!-- ====== Colección ====== -->
 <section id="scr-dex" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2><span id="dex-title">Pokémon</span> <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
     <div class="gen-tabs" id="dex-gens"></div>
     <div class="split" style="margin-top:8px">
       <div>
@@ -479,8 +479,8 @@
       <div class="grow">
         <p class="sub" style="margin:0">Cada Pokémon tiene sus propias mejoras: sólo cuentan cuando juegas con él.</p>
         <div class="row" style="margin-top:8px">
-          <label for="upg-mon" style="margin:0">Pokémon</label>
-          <select id="upg-mon" class="field" style="width:auto;min-width:220px"></select>
+          <b id="upg-name" style="font-size:17px"></b>
+          <button id="upg-pick" class="btn small gold">Cambiar de Pokémon</button>
         </div>
       </div>
       <div id="upg-stats" class="upg-stats"></div>
