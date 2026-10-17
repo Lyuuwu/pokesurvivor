@@ -187,9 +187,6 @@ G.MenuUI = (() => {
     else if (isPartner && dex !== showDetail.last) viewShiny = !!s.partnerShiny;
     showDetail.last = dex;
 
-    const max = { hp: 183, atk: 1.55, spd: 137 };
-    const bar = (label, v, m, txt) =>
-      `<div class="stat"><span>${label}</span><div class="bar"><i style="width:${Math.min(100, v / m * 100)}%"></i></div><span>${txt}</span></div>`;
     const usingThis = isPartner && (!hasSh || !!s.partnerShiny === viewShiny);
 
     const box = $('dex-detail');
@@ -205,9 +202,7 @@ G.MenuUI = (() => {
         <div style="margin:6px 0">${own ? G.UI.typeChips(p.types) : ''}</div>
       </div>
       ${own ? `
-        ${bar('Vida', p.hp, max.hp, p.hp)}
-        ${bar('Ataque', p.atk, max.atk, '×' + p.atk.toFixed(2))}
-        ${bar('Velocidad', p.spd, max.spd, p.spd)}
+        ${statsBlock(dex, viewShiny)}
         <p style="font-size:14px;margin:10px 0 4px">Empieza con <b class="gold">${G.Moves.BY_ID[G.startMoveOf(dex)].name}</b></p>
         <p class="move-icons" title="Movimientos que puede aprender">
           ${G.Moves.poolFor(p).map(id => `<span title="${G.Moves.BY_ID[id].name}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
@@ -260,6 +255,7 @@ G.MenuUI = (() => {
     const shiny = upgDex === s.partner && !!s.partnerShiny && G.DB.ownsShiny(upgDex);
     G.UI.sprite($('upg-stage'), upgDex, { lively: true, scale: 2, hero: true, shiny });
     $('upg-stage').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
+    $('upg-stats').innerHTML = statsBlock(upgDex, shiny);
     const box = $('upg-list');
     box.innerHTML = '';
     for (const u of G.Upgrades.LIST) {
@@ -296,7 +292,50 @@ G.MenuUI = (() => {
       box.appendChild(el);
       if (u.id === 'ban' && lvl > 0 && banOpen) box.appendChild(banPicker(lvl));
     }
+    box.appendChild(copiesPanel());
     box.appendChild(bindPanel());
+  }
+
+  // ---------------- copias: premios por repetidos del gacha ----------------
+  function copiesPanel() {
+    const n = G.DB.copiesOf(upgDex), max = G.Upgrades.COPY_MAX, K = G.Upgrades.COPY_KIND;
+    const rarity = G.DEX_BY[upgDex].rarity;
+    const label = (k, v) => k === 'reroll' ? `+${v} cambios de cartas` : `+${Math.round(v * 100)}% ` + { atk: 'daño', crit: 'de críticos', spd: 'velocidad' }[k];
+    const t = G.Upgrades.copyTotals(n, rarity);
+    const got = ['atk', 'reroll', 'crit', 'spd'].filter(k => t[k]).map(k => label(k, t[k]));
+    const el = document.createElement('div');
+    el.className = 'panel copies-panel';
+    el.innerHTML = `<b>Copias ${n}/${max}</b>
+      <p class="sub" style="margin:2px 0 8px"><span>Cada vez que el gacha te da este Pokémon repetido, gana una copia y su premio (se suma a las mejoras).</span>
+      ${rarity === 5 ? '<span>Legendario: cada copia da más.</span>' : ''}
+      ${got.length ? '<span>Ahora:</span> ' + got.map(g => `<b class="gold">${g}</b>`).join(' · ') : '<span>Todavía no tiene copias.</span>'}</p>
+      <div class="copy-steps">${G.Upgrades.COPIES.map((k, i) =>
+        `<span class="copy-step${i < n ? ' on' : ''}" title="${i + 1}: ${label(k, G.Upgrades.copyValue(k, rarity))}">${G.Icons.html(K[k].icon, 16)}<small>${i + 1}</small></span>`).join('')}</div>`;
+    return el;
+  }
+
+  // ---------------- cómo empieza la partida (en Pokémon y en Mejoras) ----------------
+  // La barra normal es lo del propio Pokémon; la parte dorada, lo que le suman
+  // las mejoras, las copias y jugar con la shiny.
+  const STAT_ROWS = [
+    ['hp',   'Vitalidad',     300,  v => String(Math.round(v))],
+    ['atk',  'Fuerza',        2.6,  v => '×' + v.toFixed(2)],
+    ['spd',  'Zancada',       220,  v => String(Math.round(v))],
+    ['cd',   'Reflejos',      0.3,  v => (v > 0.004 ? '-' : '') + Math.round(v * 100) + '%'],
+    ['def',  'Coraza',        0.5,  v => Math.round(v * 100) + '%'],
+    ['crit', 'Golpe Crítico', 1,    v => Math.round(v * 100) + '%']
+  ];
+  function statsBlock(dex, shiny) {
+    const s = G.DB.save, mon = G.DEX_BY[dex];
+    const lv = (s.pupg && s.pupg[dex]) || {};          // sólo leer: upgradesOf() crearía una entrada vacía
+    const x = { copies: G.DB.copiesOf(dex), rarity: mon.rarity, shiny: !!shiny && G.Sprites.hasShiny(dex) };
+    const base = G.Upgrades.runStats(mon, lv, x, true), now = G.Upgrades.runStats(mon, lv, x);
+    return `<div class="run-stats"><small>Al empezar la partida${x.shiny ? ' (shiny)' : ''}</small>` + STAT_ROWS.map(([k, label, max, fmt]) => {
+      const b = Math.min(100, base[k] / max * 100), n = Math.min(100, now[k] / max * 100);
+      const up = now[k] - base[k] > 1e-6;
+      return `<div class="stat" title="${fmt(base[k])}"><span>${label}</span><div class="bar"><i style="width:${b}%"></i>` +
+        `<i class="up" style="width:${Math.max(0, n - b)}%"></i></div><span class="${up ? 'gold' : ''}">${fmt(now[k])}</span></div>`;
+    }).join('') + '</div>';
   }
 
   // ---------------- atajos: hueco fijo para cada movimiento ----------------

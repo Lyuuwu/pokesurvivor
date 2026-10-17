@@ -89,7 +89,8 @@ G.Game = (() => {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
     const mon = G.DEX_BY[save.partner];
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
+    const shiny = !!save.partnerShiny && G.DB.ownsShiny(mon.dex) && G.Sprites.hasShiny(mon.dex);
+    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex), { copies: G.DB.copiesOf(mon.dex), rarity: mon.rarity, shiny });
 
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -111,7 +112,7 @@ G.Game = (() => {
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
 
-    pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl = new G.Player(mon, perks, shiny);
     banked = { t1: 0, t10: 0 };
     caught = [];
     // Atajos: movimientos con hueco fijo (save.pbind[dex] = [id del 1, id del 2, ...]),
@@ -233,6 +234,7 @@ G.Game = (() => {
       const mine = G.UI.isOpen('scr-bond');
       if (holdBy.length) {
         if (state === 'playing') state = 'held';
+        G.Rift.skipEnding();                          // aún en la arena tras vencer: vuelves ya (y eliges a la vez)
         if (pl && pl.bonds > 0) offerBond(true);      // si tú también tienes vínculo, eliges a la vez
         const others = holdBy.filter(n => n !== (G.Social.me && G.Social.me.name) && n !== 'Tú');
         if (!mine && others.length) G.Spawner.say('Pausa: ' + others.join(', ') + ' ' + (others.length > 1 ? 'están eligiendo…' : 'está eligiendo…'), 999, true);
@@ -678,11 +680,17 @@ G.Game = (() => {
     if (G.Coop.isHost) checkAllDown(dt);
   }
 
-  /** Caído en grupo: un compañero a tu lado te va levantando. */
+  /**
+   * Caído en grupo: un compañero a tu lado te va levantando (igual de rápido
+   * que siempre). Si nadie viene, te levantas solo: a los 30 s la primera vez
+   * que caes, 35 s la segunda... (G.Player.autoReviveTime).
+   */
   function reviveTick(dt) {
     const helper = G.Coop.puppets().some(p => !p.dead && G.U.dist2(p.x, p.y, pl.x, pl.y) < 56 * 56);
     pl.reviveT = helper ? (pl.reviveT || 0) + dt : Math.max(0, (pl.reviveT || 0) - dt * 0.5);
-    if (pl.reviveT >= G.Player.REVIVE_TIME) pl.revive(0.5);
+    pl.downT += dt;
+    pl.autoLeft = Math.max(0, G.Player.autoReviveTime(pl.downs) - pl.downT);
+    if (pl.reviveT >= G.Player.REVIVE_TIME || pl.autoLeft <= 0) pl.revive(0.5);
   }
 
   /** Anfitrión: si caéis todos, se acaba (tras ver caer al último). */

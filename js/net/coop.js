@@ -134,12 +134,13 @@ G.Coop = (() => {
     const m = g.find(x => x.kind === 'orbit') || g[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, local.mouseAim ? 1 : 0];
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, local.mouseAim ? 1 : 0,
+            local.dead ? Math.ceil(local.autoLeft || 0) : 0];
   }
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
-             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], mouseAim: a[15] === 1 };
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], mouseAim: a[15] === 1, auto: a[16] || 0 };
   }
 
   // ---------------- envío ----------------

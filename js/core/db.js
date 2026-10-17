@@ -32,8 +32,8 @@
  */
 G.DB = (() => {
   const K_ACC = 'ps.accounts', K_SES = 'ps.session', K_SAVE = 'ps.save.';
-  const K_CLOUD = 'ps.cloud.', K_MIGRATED = 'ps.migrated.';
-  const VERSION = 3;
+  const K_CLOUD = 'ps.cloud.', K_MIGRATED = 'ps.migrated.', K_BACKUP = 'ps.bak.v';
+  const VERSION = 4;
   const START_COINS = 500;
   const SDK = 'https://www.gstatic.com/firebasejs/13.0.0/';
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
@@ -87,6 +87,7 @@ G.DB = (() => {
       personality: null,      // { trait, scores }
       upgrades: {},           // (antiguo) mejoras de la cuenta; ahora van por Pokémon
       pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
+      copies: {},             // dex -> repetidos del gacha (0..G.Upgrades.COPY_MAX): premios de copias
       tickets: { t1: 0, t10: 0 },   // tickets del gacha (x1 y x10)
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
@@ -103,6 +104,7 @@ G.DB = (() => {
 
   /** Rellena campos que falten en partidas de versiones anteriores. */
   function migrate(s, name) {
+    backupOld(s);
     const base = newSave(name || s.name);
     for (const k in base) if (s[k] == null) s[k] = base[k];
     for (const k in base.stats) if (s.stats[k] == null) s.stats[k] = base.stats[k];
@@ -119,6 +121,18 @@ G.DB = (() => {
     sanitize(s);
     s.v = VERSION;
     return s;
+  }
+
+  /**
+   * Antes de pasar una partida a una versión nueva, se guarda tal cual en este
+   * navegador (ps.bak.v<versión vieja>.<nombre>), una vez por partida y versión.
+   * v3 -> v4 (17-10-2026): llegan las copias; las partidas viejas empiezan en 0.
+   */
+  function backupOld(s) {
+    const old = Number.isFinite(+s.v) ? +s.v : 1;
+    if (old >= VERSION) return;
+    const k = K_BACKUP + old + '.' + String(s.name || 'anon').toLowerCase();
+    try { if (localStorage.getItem(k) == null) localStorage.setItem(k, JSON.stringify(s)); } catch (e) { /* sin sitio: sigue igual */ }
   }
 
   /**
@@ -164,6 +178,13 @@ G.DB = (() => {
         s.pban[d] = [...new Set(l.filter(id => typeof id === 'string' && (!G.Moves || G.Moves.BY_ID[id])))].slice(0, 3);
       }
     } else s.pban = {};
+    // Copias: de 0 al máximo, sólo de Pokémon que existen.
+    if (isObj(s.copies)) {
+      for (const d of Object.keys(s.copies)) {
+        const v = Math.min(G.Upgrades ? G.Upgrades.COPY_MAX : 20, n(s.copies[d]));
+        if (!v || (G.DEX_BY && !G.DEX_BY[d])) delete s.copies[d]; else s.copies[d] = v;
+      }
+    } else s.copies = {};
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
@@ -264,6 +285,9 @@ G.DB = (() => {
       for (const k in older.pupg[d]) mine[k] = Math.max(mine[k] || 0, older.pupg[d][k]);
     }
     r.pupgDone = r.pupgDone || older.pupgDone;
+    // Copias: las que más tenga cada versión (nunca se pierden).
+    r.copies = isObj(r.copies) ? r.copies : {};
+    for (const d in isObj(older.copies) ? older.copies : {}) r.copies[d] = Math.max(num(r.copies[d]), num(older.copies[d]));
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
       r[coll] = r[coll] || {};
@@ -1065,6 +1089,11 @@ G.DB = (() => {
     return save.pupg[dex] || (save.pupg[dex] = {});
   }
 
+  /** Copias (repetidos del gacha) de un Pokémon: 0..G.Upgrades.COPY_MAX. */
+  function copiesOf(dex) {
+    return save && isObj(save.copies) ? num(save.copies[dex]) : 0;
+  }
+
   /** Da la versión shiny (y la normal, si no la tenía). Devuelve true si es nueva. */
   function grantShiny(dex, from) {
     grant(dex, from);
@@ -1076,7 +1105,7 @@ G.DB = (() => {
   return {
     ready, register, login, loginWithGoogle, playAsGuest, logout, commit, deleteAccount, flush: pushNow,
     exportSave, readExport, importSave,
-    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf,
+    owns, grant, ownsShiny, grantShiny, merge, setName, upgradesOf, copiesOf,
     onSync(fn) { listeners.add(fn); },
     onLeave(fn) { leaveHooks.push(fn); },
     /** Acceso de bajo nivel para los módulos de red (sólo en modo nube). */

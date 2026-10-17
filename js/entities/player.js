@@ -26,7 +26,7 @@ G.Player = class Player {
     this.xpMul = perks.xpMul || 1;
     this.coinMul = perks.coinMul || 1;
 
-    this.maxHp = mon.hp + (perks.hp || 0);
+    this.maxHp = Math.round(mon.hp * (perks.hpMul || 1)) + (perks.hp || 0);
     this.hp = this.maxHp;
     this.baseSpd = mon.spd;
     this.baseAtk = mon.atk;
@@ -59,6 +59,10 @@ G.Player = class Player {
     this.dmgDealt = 0;
 
     this.invuln = 0;
+    this.safeT = 0;            // protección que nada se salta (al levantarte, al salir de la grieta)
+    this.downs = 0;            // veces que has caído en esta run (cooperativo)
+    this.downT = 0;            // segundos caído (para levantarte solo)
+    this.autoLeft = 0;         // segundos que faltan para levantarte solo (también de los compañeros)
     this.flash = 0;
     this.aim = Math.PI / 2;
     this.mouseAim = false;     // teclado + ratón: dirección independiente del movimiento
@@ -78,6 +82,9 @@ G.Player = class Player {
 
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
   static get REVIVE_TIME() { return 3; }
+  /** Cooperativo: te levantas solo a los 30 s la primera vez que caes, y 5 s más cada vez. */
+  static autoReviveTime(downs) { return 30 + 5 * Math.max(0, downs - 1); }
+  static get SAFE_TIME() { return 3; }
 
   // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
   static xpFor(level) {
@@ -105,8 +112,8 @@ G.Player = class Player {
     const group = [m];
     this.slots.push(group);
     this.arrange();
-    // Se cambia al nuevo, salvo si estás usando un vínculo (no te quita el grupo).
-    if (!(this.slots[this.active] && this.slots[this.active].length > 1)) this.setActive(this.slots.indexOf(group));
+    // Sigues con el que llevabas (antes se cambiaba solo al nuevo); el nuevo, con 1-4 o la rueda.
+    if (!this.slots[this.active]) this.active = this.slots.indexOf(group);
     return true;
   }
 
@@ -227,7 +234,7 @@ G.Player = class Player {
    * @param pure  daño que no baja con la defensa ni el cuerpo a cuerpo (Arceus)
    */
   hurt(amount, type = null, pure = false) {
-    if (this.invuln > 0 || this.dead) return;
+    if (this.invuln > 0 || this.safeT > 0 || this.dead) return;
     let eff = null;
     if (type) {
       const k = G.Types.mult(type, this.mon.types);
@@ -257,6 +264,7 @@ G.Player = class Player {
       this.anim.play('Faint', { hold: true });
       G.Projectiles.clearOrbs(this);
       this.reviveT = 0;
+      this.downs++; this.downT = 0;
     }
   }
 
@@ -317,6 +325,7 @@ G.Player = class Player {
     this.anim.update(dt);
     if (this.dead) return;
     if (this.invuln > 0) this.invuln -= dt;
+    if (this.safeT > 0) this.safeT -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
 
@@ -395,16 +404,23 @@ G.Player = class Player {
     this.anim.dir = G.Sprites.dirFromAngle(face);
   }
 
-  /** Vuelve a levantarse (lo revive un compañero en cooperativo). */
+  /** Vuelve a levantarse (lo revive un compañero en cooperativo, o solo pasado un rato). */
   revive(frac = 0.5) {
     this.dead = false;
     this.hp = Math.max(1, this.maxHp * frac);
-    this.invuln = 2;
+    this.protect(Player.SAFE_TIME);
     this.reviveT = 0;
+    this.downT = 0; this.autoLeft = 0;
     this.anim._start('Idle', false);
     G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#9dffb8', 18, 150);
     G.Audio.sfx('heal');
+  }
+
+  /** `sec` segundos sin recibir daño de nada (parpadea). */
+  protect(sec) {
+    this.safeT = Math.max(this.safeT, sec);
+    this.invuln = Math.max(this.invuln, sec);
   }
 
   // ---------------- compañero (cooperativo) ----------------
@@ -419,6 +435,8 @@ G.Player = class Player {
     const n = this.net;
     if (!n) return;
     if (this.flash > 0) this.flash -= dt;
+    if (this.invuln > 0) this.invuln -= dt;
+    if (this.safeT > 0) this.safeT -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
     if (G.U.dist2(this.x, this.y, n.x, n.y) > 300 * 300) { this.x = n.x; this.y = n.y; }
     else { this.x = G.U.damp(this.x, n.x, 14, dt); this.y = G.U.damp(this.y, n.y, 14, dt); }
@@ -426,6 +444,7 @@ G.Player = class Player {
     this.hp = n.hp; this.maxHp = n.maxHp;
     this.magnet = n.mag || this.magnet;
     this.reviveT = n.rev || 0;
+    this.autoLeft = n.auto || 0;
     if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
     else if (!n.dead && this.dead) this.revive(n.hp / (n.maxHp || 1));
     // Movimiento activo (para el halo, el HUD y los orbes).
@@ -466,7 +485,8 @@ G.Player = class Player {
       ctx.restore();
     }
 
-    const alpha = this.invuln > 0 && !this.dead ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
+    const blink = Math.max(this.invuln, this.safeT);
+    const alpha = blink > 0 && !this.dead ? (Math.floor(blink * 18) % 2 ? 0.45 : 1) : 1;
     this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
 
     // Arcos de buff alrededor de los pies.
@@ -494,6 +514,18 @@ G.Player = class Player {
       ctx.beginPath();
       ctx.ellipse(this.x, this.y, this.r * 2.4, this.r * 1.0, 0, -Math.PI / 2, -Math.PI / 2 + 6.2832 * Math.min(1, this.reviveT / G.Player.REVIVE_TIME));
       ctx.stroke();
+      ctx.restore();
+    }
+    // Cooperativo: cuánto le falta para levantarse solo.
+    if (this.dead && this.autoLeft > 0) {
+      ctx.save();
+      ctx.font = '700 7px Pixelify,"Segoe UI",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.75)';
+      ctx.fillStyle = '#9dffb8';
+      const t = Math.ceil(this.autoLeft) + 's';
+      ctx.strokeText(t, this.x, this.y + 16);
+      ctx.fillText(t, this.x, this.y + 16);
       ctx.restore();
     }
     if (this.tag) {

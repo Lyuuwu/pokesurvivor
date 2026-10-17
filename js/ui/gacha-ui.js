@@ -107,7 +107,7 @@ G.GachaUI = (() => {
       c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));
       const tag = r.isNew
         ? `<span class="new">${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
-        : `Repetido · <span class="coin"></span> +${r.refund}`;
+        : `Repetido · <span class="coin"></span> +${r.refund}` + (r.copy ? `<br><span class="copy-up">Copia ${r.copy}/${G.Upgrades.COPY_MAX}</span>` : '');
       c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
       out.appendChild(c);
       G.Audio.sfx('reveal', { rarity: r.rarity });

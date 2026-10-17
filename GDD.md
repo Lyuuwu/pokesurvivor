@@ -256,11 +256,11 @@ Kanto, Johto, Hoenn, Sinnoh, Teselia, Kalos, Alola, Galar y Paldea, cada uno con
 
 | Rareza | Prob. | Repetido devuelve |
 |---|---|---|
-| Común | 45% | 15 |
+| Común | 40% | 15 |
 | Poco común | 30% | 30 |
 | Rara | 17% | 60 |
-| Épica | 6,5% | 120 |
-| Legendaria | 1,5% | 300 |
+| Épica | 10% | 120 |
+| Legendaria | 3% | 300 |
 | *Shiny* | *1% (cualquier rareza)* | *×3* |
 
 - Tirada ×1: 1 ticket · ×10: **10 tickets normales o 1 ticket ×10** (dos botones,

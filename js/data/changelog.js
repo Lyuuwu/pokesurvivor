@@ -3,10 +3,17 @@
  * de juego y fallos arreglados (nada de servidores ni bases de datos).
  * La fecha más nueva, arriba. En cada fecha, por apartados:
  *   new  lo nuevo · chg  cambios y ajustes · fix  fallos arreglados
- * Cada línea en español y en inglés.
+ * Hasta el 16-10-2026 cada línea iba en español y en inglés: [es, en].
+ * Desde el 17-10-2026, sólo en inglés: un texto suelto (news-ui.js lo enseña en
+ * todos los idiomas; en chino, traducido si está en locales/zh-TW.json).
  */
 G.CHANGELOG = [
-  { d: '2026-10-17', title: ['Copia de la partida, sala con «Estoy listo» y filtros de Pokémon', 'Save backup, co-op ready check and Pokémon filters'], new: [
+  { d: '2026-10-17', title: 'Duplicate copies, shiny boost, co-op auto-revive, ready check and Pokémon filters', new: [
+    'Duplicates: every time the gacha gives you a Pokémon you already have, it gains a copy (up to 20). Each copy gives that Pokémon a bonus on top of its upgrades: more damage, level-up card rerolls, critical chance or speed (all 20: +16% damage, +6 rerolls, +18% critical chance, +12% speed). See them in Upgrades. Duplicates still give coins too. Existing saves start at 0 copies.',
+    'Duplicates of legendaries (★5) give more per copy: +6% damage, +2 rerolls, +5% critical chance or +5% speed (all 20: +24% damage, +12 rerolls, +30% critical chance, +20% speed).',
+    'Shiny boost: playing with a shiny makes it stronger in everything. HP, damage and speed go up depending on rarity, so a common Pokémon’s shiny is about as strong as a base legendary (Common: +25% HP, +35% damage, +20% speed · Uncommon: +20% / +25% / +16% · Rare: +15% / +15% / +12% · Epic: +12% / +10% / +10% · Legendary: +10% / +10% / +8%), and every shiny gets +10% defense and +10% critical chance.',
+    'Pokémon and Upgrades show what your Pokémon starts a run with: HP, strength, speed, cooldown, armor and critical chance, with upgrades, copies and shiny included (the gold part of each bar).',
+    'Co-op: if you go down and nobody revives you, you get back up on your own after 30 s (35 s the next time, then +5 s each time). Teammates can still revive you, just as fast as before. The countdown shows under the fallen Pokémon.',
     ['Cooperativo: en la sala cada invitado pulsa «Estoy listo» y el anfitrión sólo puede empezar cuando lo están todos. Si vuelves al menú dejas de estar listo y, al acabar la partida, hay que pulsarlo otra vez.',
      'Co-op: in the room every guest presses “I’m ready”, and the host can only start once everyone is. Going back to the menu clears it, and after a run you press it again.'],
     ['En Ajustes > Cuenta puedes exportar tu partida a un archivo e importarla en otra web o aparato. Al importar se junta con tu partida: los Pokémon se suman, las monedas y los tickets no se duplican y un archivo viejo nunca quita nada.',
@@ -16,9 +23,13 @@ G.CHANGELOG = [
     ['Pokémon: pestaña «Todas» con las nueve regiones juntas, y los filtros se combinan: Tengo / Me faltan con Shiny y una o varias rarezas (por ejemplo, todos tus legendarios de una vez).',
      'Pokémon: an “All” tab with the nine regions together, and the filters now combine: Owned / Missing with Shiny and one or more rarities (for example, all your legendaries at once).']
   ], chg: [
+    'Gacha rates: Legendary 3% (was 1.5%), Epic 10% (was 6.5%) and Common 40% (was 45%).',
+    'After being revived, and when you come back from a rift, nothing can hurt you for 3 s.',
+    'Learning a new move no longer switches to it: you keep the move you were using (change with 1-4 or the wheel).',
     ['Mejoras: al entrar se abre siempre el Pokémon que llevas de compañero, no el último que miraste.',
      'Upgrades: it always opens on your current partner, not the last Pokémon you looked at.']
   ], fix: [
+    'Co-op: after beating a legendary, everyone picks their fusion at the same time instead of waiting for each other one by one.',
     ['Ya no te quedas atascado entre árboles, rocas y paredes que se ven separados: contra el escenario sólo chocan los pies de tu Pokémon y el tronco de los árboles, no todo el cuerpo ni la copa. Los enemigos también rodean mejor los bosques.',
      'You no longer get stuck between trees, rocks and walls that look far enough apart: only your Pokémon’s feet and the tree trunks collide with the scenery, not the whole body or the treetop. Enemies also get around forests more easily.']
   ] },

@@ -565,6 +565,14 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .tickets-line img, #tickets-pill img, #cost-1 img, #cost-10 img { vertical-align: middle; }
 .upg-head { display: flex; gap: 14px; align-items: center; margin: 6px 0 12px; }
 .upg-head .stage { width: 120px; height: 96px; flex: 0 0 120px; }
+.upg-stats { flex: 0 1 300px; min-width: 240px; }
+@media (max-width: 760px) { .upg-head { flex-wrap: wrap; } .upg-stats { flex: 1 1 100%; } }
+.run-stats > small { display: block; color: var(--muted); font-size: 12px; margin: 6px 0 2px; }
+.run-stats .stat { grid-template-columns: 78px 1fr 46px; font-size: 13px; margin: 3px 0; }
+.run-stats .stat > span:last-child { text-align: right; }
+.run-stats .bar { display: flex; }
+.run-stats .bar i { flex: 0 0 auto; background: #9fb1c9; }
+.run-stats .bar i.up { background: var(--gold); }
 select.field { font-family: var(--font); }
 
 /* ---------- tragaperras del gacha ---------- */
@@ -789,6 +797,13 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .upg-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .ban-picker { grid-column: 1 / -1; }
 .bind-panel { grid-column: 1 / -1; }
+.copies-panel { grid-column: 1 / -1; }
+.copy-steps { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.copy-step { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 0; border-radius: 6px; background: rgba(0,0,0,.3); opacity: .45; }
+.copy-step small { font-size: 10px; color: var(--muted); }
+.copy-step.on { opacity: 1; background: rgba(255,210,63,.18); box-shadow: inset 0 0 0 1px var(--gold); }
+.copy-up { color: var(--gold); font-weight: 700; }
+@media (max-width: 760px) { .copy-steps { grid-template-columns: repeat(5, 1fr); } }
 .bind-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .bind-slot { display: flex; align-items: center; gap: 6px; margin: 0; }
 .bind-slot span { font-weight: 700; color: var(--gold); min-width: 14px; }
@@ -838,7 +853,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   #dex-detail { min-height: 0; overflow-y: auto; padding: 6px 8px; display: flex; flex-direction: column; }
   #dex-detail .stage { width: 132px; height: 114px; margin: 2px auto 4px; }
   #dex-detail h3 { margin: 0; }
-  #dex-detail .stat { grid-template-columns: 62px 1fr 34px; gap: 4px; font-size: 12px; margin: 2px 0; }
+  #dex-detail .stat { grid-template-columns: 62px 1fr 42px; gap: 4px; font-size: 12px; margin: 2px 0; }
   #dex-detail p { margin: 4px 0 !important; font-size: 12px !important; }
   #dex-detail .move-icons { margin-bottom: 4px; }
   /* El botón de elegir, pegado abajo de la ficha: se ve aunque la ficha no quepa. */

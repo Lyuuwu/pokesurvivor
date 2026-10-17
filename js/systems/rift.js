@@ -227,10 +227,20 @@ G.Rift = (() => {
     for (const p of G.Game.everyone()) { p.x = a.back.x; p.y = a.back.y; }
     pl.x = a.back.x; pl.y = a.back.y;
     if (pl.dead) pl.revive(0.3);
+    // Al volver al mapa, 3 s sin que nada te dañe (a veces hay enemigos esperando).
+    pl.protect(G.Player.SAFE_TIME);
     G.Camera.x = pl.x; G.Camera.y = pl.y;
     G.Game.flash('#c9a6ff', 0.8);
     if (pl.bonds > 0) G.Game.offerBond();
   }
+
+  /**
+   * Grupo: otro ya ha vuelto al mapa y está eligiendo su fusión (la partida se
+   * para para todos). Si tú sigues en la arena esperando el final, vuelves ya y
+   * eliges a la vez: con la partida parada tu cuenta atrás no avanzaba y tu
+   * fusión no salía hasta que él terminaba (uno detrás de otro).
+   */
+  function skipEnding() { if (arena && arena.phase !== 'fight') finish(); }
 
   // ---------------- dibujo ----------------
 
@@ -269,7 +279,7 @@ G.Rift = (() => {
   }
 
   return {
-    reset, update, drawable, onEvent, enterRequest() { if (!arena) start(); },
+    reset, update, drawable, onEvent, skipEnding, enterRequest() { if (!arena) start(); },
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },

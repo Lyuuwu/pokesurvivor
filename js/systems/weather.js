@@ -108,7 +108,7 @@ G.Weather = (() => {
     chipT -= dt;
     if (chipT <= 0) {
       chipT = 2;
-      if (pl && !pl.dead && hurts(pl.mon.types) && level() > 0.5) {
+      if (pl && !pl.dead && !(pl.safeT > 0) && hurts(pl.mon.types) && level() > 0.5) {
         const d = Math.max(1, pl.maxHp * 0.012);
         if (pl.hp > d + 1) {
           pl.hp -= d;

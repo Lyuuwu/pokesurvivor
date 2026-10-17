@@ -2,12 +2,13 @@
  * Lógica pura: no toca la interfaz. La pantalla está en ui/gacha-ui.js.
  *
  * 9 banners (Kanto ... Paldea). Cada uno con su propio pity.
- * Probabilidades por tirada:  1★ 45% · 2★ 30% · 3★ 17% · 4★ 6.5% · 5★ 1.5%
+ * Probabilidades por tirada:  1★ 40% · 2★ 30% · 3★ 17% · 4★ 10% · 5★ 3%
  * Garantías:
  *   - la tirada ×10 trae al menos un 4★ o superior
  *   - a las 70 tiradas sin 5★ en ese banner, el siguiente es 5★ seguro
  * Shiny: 1 de cada 100 tiradas sale en su versión shiny.
- * Repetidos: se convierten en Pokémonedas (los shiny repetidos, el triple).
+ * Repetidos: se convierten en Pokémonedas (los shiny repetidos, el triple) y
+ * además suben una copia de ese Pokémon (hasta 20; premios en data/upgrades.js).
  *
  * Se tira con TICKETS (se consiguen jugando):
  *   ×1   1 ticket
@@ -21,7 +22,7 @@ G.Gacha = (() => {
     if (n === 10 && use === 't10') return t.t10 >= 1 ? { t1: 0, t10: 1 } : null;
     return t.t1 >= n ? { t1: n, t10: 0 } : null;
   }
-  const RATES = [[1, 45], [2, 30], [3, 17], [4, 6.5], [5, 1.5]];
+  const RATES = [[1, 40], [2, 30], [3, 17], [4, 10], [5, 3]];
   const PITY_5 = 70;
   const SHINY_RATE = 1 / 100;
   const REFUND = { 1: 15, 2: 30, 3: 60, 4: 120, 5: 300 };
@@ -75,7 +76,7 @@ G.Gacha = (() => {
   /**
    * Hace `n` tiradas en el banner `gen` sobre el guardado `save` (lo modifica).
    * Devuelve null si no hay monedas, o la lista de resultados:
-   *   { dex, rarity, shiny, isNew, refund }
+   *   { dex, rarity, shiny, isNew, refund, copy }  (copy: copias tras ésta, 0 si no sube)
    */
   function pull(save, n, gen = 1, use = 't1') {
     const cost = costOf(save, n, use);
@@ -84,6 +85,7 @@ G.Gacha = (() => {
     save.tickets.t10 -= cost.t10;
     save.pity = save.pity || {};
     save.shiny = save.shiny || {};
+    save.copies = save.copies || {};
     save.pity[gen] = save.pity[gen] || 0;
 
     const out = [];
@@ -118,7 +120,10 @@ G.Gacha = (() => {
         else refund = REFUND[rarity];
       }
       save.coins += refund;
-      out.push({ dex: mon.dex, rarity, shiny, isNew, refund });
+      // Repetido: una copia más (al máximo ya sólo da monedas).
+      let copy = 0;
+      if (!isNew && (save.copies[mon.dex] || 0) < G.Upgrades.COPY_MAX) copy = save.copies[mon.dex] = (save.copies[mon.dex] || 0) + 1;
+      out.push({ dex: mon.dex, rarity, shiny, isNew, refund, copy });
     }
     save.stats.pulls = (save.stats.pulls || 0) + n;
     return out;

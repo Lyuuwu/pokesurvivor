@@ -381,6 +381,15 @@ G.I18n.add({
   'Pulsa «Estoy listo»: el anfitrión sólo puede empezar cuando estéis todos listos.': 'Press “I\'m ready”: the host can only start once you\'re all ready.',
   'Esperando a que todos estén listos ({x})': 'Waiting for everyone to be ready ({x})',
   'Copiar': 'Copy', 'Código copiado': 'Code copied', 'No se pudo copiar el código': 'Couldn\'t copy the code',
+  // ---------------- copias (repetidos del gacha) ----------------
+  'Copia {x}/{x}': 'Copy {x}/{x}', 'Copias {x}/{x}': 'Copies {x}/{x}', 'Ahora:': 'Now:', 'Todavía no tiene copias.': 'No copies yet.',
+  'Cada vez que el gacha te da este Pokémon repetido, gana una copia y su premio (se suma a las mejoras).':
+    'Every time the gacha gives you this Pokémon again, it gains a copy and its bonus (on top of the upgrades).',
+  '+{x}% daño': '+{x}% damage', '+{x} cambios de cartas': '+{x} card rerolls', '+{x}% de críticos': '+{x}% critical chance', '+{x}% velocidad': '+{x}% speed',
+  '+1 cambio de cartas': '+1 card reroll', '+3% de críticos': '+3% critical chance',
+  'Legendario: cada copia da más.': 'Legendary: each copy gives more.',
+  'Al empezar la partida': 'At the start of a run', 'Al empezar la partida (shiny)': 'At the start of a run (shiny)',
+  'niveles': 'levels',                    // Mejoras: «Charmander (compañero) · 4 niveles»
   'Eres el anfitrión. Invita a tus amigos (hasta {x}) y empezad cuando estéis.': 'You\'re the host. Invite your friends (up to {x}) and start when you\'re ready.',
   'Estás en la sala de {x}. El anfitrión empezará la partida.': 'You\'re in {x}\'s room. The host will start the game.',
   'Cuando el anfitrión empiece, entraréis todos a la vez.': 'When the host starts, you\'ll all join at the same time.', 'La partida empieza para todos a la vez.': 'The game starts for everyone at once.',

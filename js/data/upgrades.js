@@ -25,26 +25,99 @@ G.Upgrades = (() => {
     return Math.round(u.base * Math.pow(u.grow, lvl) / 10) * 10;
   }
 
-  /** Niveles comprados -> modificadores para G.Player. */
-  function perks(levels = {}) {
+  /*
+   * COPIAS (repetidos del gacha). Cada vez que te sale un Pokémon que ya tenías
+   * sube un nivel de copias de ESE Pokémon, hasta COPY_MAX. Cada nivel da un
+   * premio fijo, el mismo para todos los Pokémon, que se suma a lo comprado en
+   * Mejoras (y no cuenta para sus máximos). Lo que más se echaba en falta eran
+   * cambios de cartas y críticos: por eso salen más a menudo.
+   * Los legendarios (★5) salen mucho menos, así que cada copia suya da más (leg).
+   * Total con 20: +16% daño, +6 cambios de cartas, +18% críticos, +12% velocidad;
+   *   legendario: +24% daño, +12 cambios de cartas, +30% críticos, +20% velocidad.
+   */
+  const COPY_MAX = 20;
+  const COPY_KIND = {
+    atk:    { icon: 'fist', v: 0.04, leg: 0.06 },
+    reroll: { icon: 'up',   v: 1,    leg: 2 },
+    crit:   { icon: 'star', v: 0.03, leg: 0.05 },
+    spd:    { icon: 'boot', v: 0.03, leg: 0.05 }
+  };
+  const COPIES = ['atk', 'reroll', 'crit', 'spd', 'reroll',
+                  'crit', 'atk', 'reroll', 'crit', 'spd',
+                  'atk', 'reroll', 'crit', 'spd', 'reroll',
+                  'crit', 'atk', 'reroll', 'crit', 'spd'];
+
+  /** Lo que da UNA copia de tipo `k` a un Pokémon de esa rareza. */
+  const copyValue = (k, rarity) => (rarity === 5 ? COPY_KIND[k].leg : COPY_KIND[k].v);
+
+  /** Lo que dan `n` copias: { atk, reroll, crit, spd } sumados. */
+  function copyTotals(n, rarity = 1) {
+    const t = { atk: 0, reroll: 0, crit: 0, spd: 0 };
+    const k = Math.max(0, Math.min(COPY_MAX, Math.floor(+n || 0)));
+    for (let i = 0; i < k; i++) t[COPIES[i]] += copyValue(COPIES[i], rarity);
+    return t;
+  }
+
+  /*
+   * SHINY. Jugar con la versión shiny da una mejora en todo. La de vida, daño y
+   * velocidad depende de la rareza: con ella la shiny de un Pokémon normal
+   * queda como un legendario normal (de media: vida 91 -> 112, daño x1,00 ->
+   * x1,35, velocidad 98 -> 118), y así se puede jugar con cualquiera. Además,
+   * para todas, defensa y críticos. Lo de la rareza multiplica la base del
+   * Pokémon (como si fuera más fuerte de por sí); el resto se suma.
+   */
+  const SHINY = {
+    1: { hp: 0.25, atk: 0.35, spd: 0.20 },
+    2: { hp: 0.20, atk: 0.25, spd: 0.16 },
+    3: { hp: 0.15, atk: 0.15, spd: 0.12 },
+    4: { hp: 0.12, atk: 0.10, spd: 0.10 },
+    5: { hp: 0.10, atk: 0.10, spd: 0.08 }
+  };
+  const SHINY_ALL = { def: 0.10, crit: 0.10 };
+  const shinyOf = (rarity, shiny) => (shiny ? Object.assign({}, SHINY[rarity] || SHINY[1], SHINY_ALL) : { hp: 0, atk: 0, spd: 0, def: 0, crit: 0 });
+
+  /**
+   * Niveles comprados -> modificadores para G.Player.
+   * @param x  { copies, rarity, shiny }: copias del gacha, rareza (1-5) y si juegas con la shiny
+   */
+  function perks(levels = {}, x = {}) {
     // Nunca por encima del máximo (una partida editada a mano no da más poder).
     const L = id => Math.max(0, Math.min(BY[id].max, Math.floor(+levels[id] || 0)));
+    const C = copyTotals(x.copies, x.rarity), S = shinyOf(x.rarity, x.shiny);
     return {
       hp: L('hp') * 8,
-      atkMul: 1 + L('atk') * 0.04,
-      spdMul: 1 + L('spd') * 0.03,
+      hpMul: 1 + S.hp,                                       // sobre la vida base del Pokémon
+      atkMul: (1 + L('atk') * 0.04 + C.atk) * (1 + S.atk),
+      spdMul: (1 + L('spd') * 0.03 + C.spd) * (1 + S.spd),
       cdMul: 1 - L('cd') * 0.03,
-      dmgReduce: L('def') * 0.02,
+      dmgReduce: L('def') * 0.02 + S.def,
       regen: L('regen') * 0.2,
       magnetMul: 1 + L('magnet') * 0.12,
       xpMul: 1 + L('xp') * 0.05,
       coinMul: 1 + L('coins') * 0.08,
       startMoves: 1 + L('moves'),
-      crit: L('crit') * 0.03,
-      rerolls: L('reroll'),
+      crit: L('crit') * 0.03 + C.crit + S.crit,
+      rerolls: L('reroll') + C.reroll,
       bans: L('ban')
     };
   }
 
-  return { LIST, BY, cost, perks };
+  /**
+   * Cómo empieza la partida un Pokémon (lo que se ve en Pokémon y en Mejoras):
+   * vida, daño (multiplicador), velocidad, recarga (menos es mejor), defensa
+   * y críticos. Con `bare`, sólo lo suyo (sin mejoras, copias ni shiny).
+   */
+  function runStats(mon, levels, x = {}, bare = false) {
+    const k = bare ? perks({}, {}) : perks(levels, x);
+    return {
+      hp: Math.round(mon.hp * k.hpMul) + k.hp,
+      atk: mon.atk * k.atkMul,
+      spd: Math.round(mon.spd * k.spdMul),
+      cd: 1 - k.cdMul,
+      def: Math.min(0.8, k.dmgReduce),
+      crit: k.crit
+    };
+  }
+
+  return { LIST, BY, cost, perks, runStats, COPY_MAX, COPY_KIND, COPIES, copyValue, copyTotals, SHINY, SHINY_ALL };
 })();
